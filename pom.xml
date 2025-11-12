@@ -12,6 +12,22 @@
         <maven.compiler.source>25</maven.compiler.source>
         <maven.compiler.target>25</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <main.entrypoint>dev.ladera.battleship.Main</main.entrypoint>
     </properties>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.6.2</version>
+                <configuration>
+                    <mainClass>${main.entrypoint}</mainClass>
+                </configuration>
+            </plugin>
+
+        </plugins>
+    </build>
 
 </project>
