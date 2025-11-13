@@ -69,7 +69,6 @@ but can help with development and rerunning commands.
 | `build` | Builds the jar             |
 | `test`  | Runs all tests             |
 
-There's more recipes defined
 To view all recipes, use the following command:
 
 ```sh
