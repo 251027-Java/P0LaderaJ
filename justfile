@@ -25,6 +25,7 @@ test:
 # style check
 check:
     {{ maven }} spotless:check
+    {{ maven }} checkstyle:check
 
 # format code
 format:
