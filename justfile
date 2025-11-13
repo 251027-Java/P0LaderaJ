@@ -21,3 +21,15 @@ build:
 # runs tests
 test:
     {{ maven }} test
+
+# style check
+check:
+    {{ maven }} spotless:check
+
+# format code
+format:
+    {{ maven }} spotless:apply
+
+# cleans and runs mvnw verify
+all: clean
+    {{ maven }} verify
