@@ -5,7 +5,7 @@
 ## Usage
 
 Maven can be used in this project via `./mvnw` in command line. In addition, [just](https://just.systems/man/en/) is 
-supported if available. See [just Commands](#just-commands) for more information.
+supported if available. See [Just Commands](#just-commands) for more information.
 
 > [!NOTE]
 > If using Command Prompt or a similar shell, 
@@ -48,7 +48,7 @@ Any commands found here that use `./mvnw` should work if replaced with `./mvnw.b
 
 If using a bash emulator or similar on Windows, such as Git Bash, `./mvnw` can be used. In addition, commands found in
 the [justfile](./justfile) can be run if [just](https://just.systems/man/en/) is installed. See 
-[just Commands](#just-commands) for more information on `just` commands.
+[Just Commands](#just-commands) for more information on `just` commands.
 
 ### `just` Commands
 
