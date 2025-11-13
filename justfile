@@ -3,7 +3,7 @@ jar_loc := 'target/battleship-1.0-0-dist.jar'
 
 # removes artifacts and temporary files
 clean:
-    rm dependency-reduced-pom.xml
+    rm -f dependency-reduced-pom.xml
     {{ maven }} clean
 
 # compiles and runs the Main file
