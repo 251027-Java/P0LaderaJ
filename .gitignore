@@ -5,6 +5,7 @@ target/
 .kotlin
 
 logs/
+.temp/
 dependency-reduced-pom.xml
 
 ### IntelliJ IDEA ###
