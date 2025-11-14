@@ -9,7 +9,7 @@ supported if available. See [Just Commands](#just-commands) for more information
 
 > [!NOTE]
 > If using Command Prompt or a similar shell, 
-`./mvnw.bat` may need to be used instead. See [Windows Usage](#windows-usage) for more information.
+`./mvnw.cmd` may need to be used instead. See [Windows Usage](#windows-usage) for more information.
 
 ### Running the game
 
@@ -43,8 +43,8 @@ java -jar target/battleship-1.0.0-dist.jar
 
 ### Windows Usage
 
-For some shells on Windows, such as Command Prompt, `./mvnw.bat` should be used instead if `./mvnw` cannot be run.
-Any commands found here that use `./mvnw` should work if replaced with `./mvnw.bat`. 
+For some shells on Windows, such as Command Prompt, `./mvnw.cmd` should be used instead if `./mvnw` cannot be run.
+Any commands found here that use `./mvnw` should work if replaced with `./mvnw.cmd`. 
 
 If using a bash emulator or similar on Windows, such as Git Bash, `./mvnw` can be used. In addition, commands found in
 the [justfile](./justfile) can be run if [just](https://just.systems/man/en/) is installed. See 
