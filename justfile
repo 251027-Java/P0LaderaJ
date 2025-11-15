@@ -24,11 +24,13 @@ test:
     {{ maven }} test
 
 # style check
+[group('style')]
 check:
     {{ maven }} spotless:check
     {{ maven }} checkstyle:check
 
 # format code
+[group('style')]
 format:
     {{ maven }} spotless:apply
 
@@ -36,15 +38,39 @@ format:
 all: clean
     {{ maven }} verify
 
-# create the database container
-make-db:
+_db-create:
     docker run --name {{ db_container }} -e POSTGRES_PASSWORD=secret -d postgres
 
-# initialize the database
-init-db:
-    docker cp scripts/init-db.sql {{ db_container }}:/tmp/init-db.sql
-    docker exec {{ db_container }} psql -U postgres -f tmp/init-db.sql
+_db-init filepath:
+    docker cp {{ filepath }} {{ db_container }}:/tmp/{{ file_name(filepath) }}
+    @sleep 2
+    docker exec {{ db_container }} psql -U postgres -f tmp/{{ file_name(filepath) }}
+
+# create the container and set up the database 
+[group('db')]
+db-create: _db-create (_db-init 'scripts/init-db.sql')
 
 # destroy the database container
-destroy-db:
+[group('db')]
+db-destroy:
     docker rm -f {{ db_container }}
+
+# start the database container
+[group('db')]
+db-start:
+    docker start {{ db_container }}
+
+# stop the database container
+[group('db')]
+db-stop:
+    docker stop {{ db_container }}
+
+# export the database
+[group('db')]
+db-export filepath='battle.data':
+    docker exec {{ db_container }} pg_dump -U postgres -F p postgres > {{ filepath }}
+
+# create container with a given data file
+[group('db')]
+db-create-with filepath: _db-create (_db-init filepath)
+
