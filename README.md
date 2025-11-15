@@ -1,4 +1,4 @@
-# Battleship
+<h1 align="center">Battleship</h1>
 
 <!-- TODO add section on how to start game. probably include database initialization -->
 
