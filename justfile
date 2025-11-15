@@ -42,9 +42,9 @@ _db-create:
     docker run --name {{ db_container }} -e POSTGRES_PASSWORD=secret -d postgres
 
 _db-init filepath:
-    docker cp {{ filepath }} {{ db_container }}:/tmp/{{ file_name(filepath) }}
+    docker cp {{ filepath }} {{ db_container }}:/tmp/dbdata
     @sleep 2
-    docker exec {{ db_container }} psql -U postgres -f tmp/{{ file_name(filepath) }}
+    docker exec {{ db_container }} psql -U postgres -f tmp/dbdata
 
 # create the container and set up the database 
 [group('db')]
