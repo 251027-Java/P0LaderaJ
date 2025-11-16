@@ -29,22 +29,23 @@ check:
     {{ maven }} spotless:check
     {{ maven }} checkstyle:check
 
-# format code
+# format all code
 [group('style')]
 format:
     {{ maven }} spotless:apply
+    docker run --rm -v /$(pwd):/work backplane/pgformatter -i scripts/*.sql
 
 # cleans and runs mvnw verify
 all: clean
     {{ maven }} verify
 
 _db-create:
-    docker run --name {{ db_container }} -e POSTGRES_PASSWORD=secret -d postgres
+    docker run --name {{ db_container }} -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres
 
 _db-init filepath:
     docker cp {{ filepath }} {{ db_container }}:/tmp/dbdata
     @sleep 2
-    docker exec {{ db_container }} psql -U postgres -f tmp/dbdata
+    docker exec {{ db_container }} psql -U postgres -v ON_ERROR_STOP=1 -q -f tmp/dbdata
 
 # create the container and set up the database 
 [group('db')]
