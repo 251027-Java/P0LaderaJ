@@ -44,3 +44,39 @@ ALTER TABLE ship
 
 ALTER TABLE ship
     ADD CONSTRAINT fk_game_id FOREIGN KEY (game_id) REFERENCES game (id) ON DELETE CASCADE;
+
+CREATE PROCEDURE prune_games ()
+    AS $$
+BEGIN
+    WITH game_players AS (
+        SELECT
+            player_id,
+            game_id
+        FROM
+            player_move
+        UNION ALL
+        SELECT
+            player_id,
+            game_id
+        FROM
+            ship
+),
+game_no_players AS (
+    SELECT
+        game_id
+    FROM
+        game_players
+    GROUP BY
+        game_id
+    HAVING
+        COUNT(DISTINCT player_id) = 0)
+DELETE FROM game
+WHERE game.id IN (
+        SELECT
+            game_no_players.game_id
+        FROM
+            game_no_players);
+END;
+$$
+LANGUAGE plpgsql;
+
