@@ -7,7 +7,7 @@ public interface IPlayerRepository {
 
     Player findByUsername(String username);
 
-    void save(Player move);
+    void save(Player player);
 
     void deleteById(long id);
 }

@@ -87,7 +87,7 @@ public class JdbcMoveRepository implements IMoveRepository {
             st.setInt(1, move.getTurn());
             st.setInt(2, move.getRow());
             st.setInt(3, move.getCol());
-            st.setLong(4, move.getPlayerId());
+            st.setObject(4, move.getPlayerId());
             st.setLong(5, move.getGameId());
 
             var res = st.executeUpdate();

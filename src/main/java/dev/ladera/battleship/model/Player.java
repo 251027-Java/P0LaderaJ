@@ -28,4 +28,12 @@ public class Player {
     public String getUsername() {
         return username;
     }
+
+    public String getPassphrase() {
+        return passphrase;
+    }
+
+    public Long getOriginPlayerId() {
+        return originPlayerId;
+    }
 }

@@ -89,7 +89,7 @@ public class JdbcShipRepository implements IShipRepository {
             st.setInt(2, ship.getRowEnd());
             st.setInt(3, ship.getColStart());
             st.setInt(4, ship.getColEnd());
-            st.setLong(5, ship.getPlayerId());
+            st.setObject(5, ship.getPlayerId());
             st.setLong(6, ship.getGameId());
 
             var res = st.executeUpdate();
