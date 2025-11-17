@@ -19,7 +19,7 @@ public class JdbcGameRepository implements IGameRepository {
     }
 
     @Override
-    public Game findById(long id) {
+    public Game findById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             SELECT id, rows_val, cols_val FROM game
@@ -32,15 +32,13 @@ public class JdbcGameRepository implements IGameRepository {
             if (res.next()) {
                 return new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val"), null, null);
             }
-        } catch (SQLException e) {
-            LOGGER.error("Error while finding game by id: {}", id, e);
         }
 
         return null;
     }
 
     @Override
-    public List<Game> findByPlayerId(long id) {
+    public List<Game> findByPlayerId(long id) throws SQLException {
         List<Game> ret = new ArrayList<>();
 
         try (var st = connection.prepareStatement(
@@ -64,16 +62,13 @@ public class JdbcGameRepository implements IGameRepository {
             while (res.next()) {
                 ret.add(new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val"), null, null));
             }
-
-        } catch (SQLException e) {
-            LOGGER.error("Error while finding games by player id: {}", id, e);
         }
 
         return ret;
     }
 
     @Override
-    public void save(Game game) {
+    public Game save(Game game) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             INSERT INTO game (rows_val, cols_val)
@@ -88,16 +83,17 @@ public class JdbcGameRepository implements IGameRepository {
 
             if (keys.next()) {
                 game.setId(keys.getLong(1));
+
+                LOGGER.info("Inserted game ({}): {}", res, game.getId());
+                return game;
             }
 
-            LOGGER.info("Inserted game ({}): {}", res, game.getId());
-        } catch (SQLException e) {
-            LOGGER.error("Error while saving game", e);
+            return null;
         }
     }
 
     @Override
-    public void deleteById(long id) {
+    public void deleteById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             DELETE FROM game
@@ -107,8 +103,6 @@ public class JdbcGameRepository implements IGameRepository {
 
             var res = st.executeUpdate();
             LOGGER.info("Deleted game ({})", res);
-        } catch (SQLException e) {
-            LOGGER.error("Error while deleting game by id", e);
         }
     }
 }

@@ -10,6 +10,7 @@ import dev.ladera.battleship.service.BattleshipService;
 import dev.ladera.battleship.service.GameService;
 import dev.ladera.battleship.service.IBattleshipService;
 import dev.ladera.battleship.service.IGameService;
+import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ public class Main {
         LOGGER.info("Application closing");
     }
 
-    static void playerRepoTest(IPlayerRepository repository) {
+    static void playerRepoTest(IPlayerRepository repository) throws SQLException {
         Player p1 = new Player("minidomo", "oisjdfoijsdo", null);
         Player p2 = new Player("cooldude", "oisjdfoijsdo", null);
 
@@ -56,7 +57,7 @@ public class Main {
         System.out.println(repository.findByUsername("COolDUDE"));
     }
 
-    static void gameRepoTest(IGameRepository repository) {
+    static void gameRepoTest(IGameRepository repository) throws SQLException {
         Game g1 = new Game(10, 10);
         Game g2 = new Game(10, 10);
 
@@ -72,7 +73,7 @@ public class Main {
         System.out.println(repository.findById(g2.getId()));
     }
 
-    static void shipRepoTest(IShipRepository repository) {
+    static void shipRepoTest(IShipRepository repository) throws SQLException {
         Ship e1 = new Ship(1, 3, 2, 2, 1L, 1L);
         Ship e2 = new Ship(2, 5, 2, 2, 1L, 1L);
 
@@ -87,7 +88,7 @@ public class Main {
         System.out.println(repository.findById(e2.getId()));
     }
 
-    static void moveRepoTest(IMoveRepository repository) {
+    static void moveRepoTest(IMoveRepository repository) throws SQLException {
         Move e1 = new Move(1, 1, 2, 1L, 1L);
         Move e2 = new Move(2, 5, 4, 1L, 1L);
 

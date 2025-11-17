@@ -19,7 +19,7 @@ public class JdbcMoveRepository implements IMoveRepository {
     }
 
     @Override
-    public Move findById(long id) {
+    public Move findById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             SELECT id, turn, row_val, col_val, player_id, game_id FROM player_move
@@ -38,16 +38,13 @@ public class JdbcMoveRepository implements IMoveRepository {
                         res.getObject("player_id", Long.class),
                         res.getLong("game_id"));
             }
-
-        } catch (SQLException e) {
-            LOGGER.error("Error while finding move by id: {}", id, e);
         }
 
         return null;
     }
 
     @Override
-    public List<Move> findByGameId(long gameId) {
+    public List<Move> findByGameId(long gameId) throws SQLException {
         List<Move> ret = new ArrayList<>();
 
         try (var st = connection.prepareStatement(
@@ -68,16 +65,13 @@ public class JdbcMoveRepository implements IMoveRepository {
                         res.getObject("player_id", Long.class),
                         res.getLong("game_id")));
             }
-
-        } catch (SQLException e) {
-            LOGGER.error("Error while finding by game id: {}", gameId, e);
         }
 
         return ret;
     }
 
     @Override
-    public void save(Move move) {
+    public Move save(Move move) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             INSERT INTO player_move (turn, row_val, col_val, player_id, game_id)
@@ -95,16 +89,17 @@ public class JdbcMoveRepository implements IMoveRepository {
 
             if (keys.next()) {
                 move.setId(keys.getLong(1));
+
+                LOGGER.info("Inserted move ({}): {}", res, move.getId());
+                return move;
             }
 
-            LOGGER.info("Inserted move ({}): {}", res, move.getId());
-        } catch (SQLException e) {
-            LOGGER.error("Error while saving move", e);
+            return null;
         }
     }
 
     @Override
-    public void deleteById(long id) {
+    public void deleteById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             DELETE FROM player_move
@@ -114,8 +109,6 @@ public class JdbcMoveRepository implements IMoveRepository {
 
             var res = st.executeUpdate();
             LOGGER.info("Deleted move ({})", res);
-        } catch (SQLException e) {
-            LOGGER.error("Error while deleting move by id", e);
         }
     }
 }
