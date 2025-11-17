@@ -6,6 +6,7 @@ import dev.ladera.battleship.model.Ship;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -93,7 +94,28 @@ public class JdbcGameRepository implements IGameRepository {
     }
 
     @Override
-    public void save(Game game) {}
+    public void save(Game game) {
+        try (var st = connection.prepareStatement(
+                """
+            INSERT INTO game
+            VALUES (?, ?)
+            """,
+                Statement.RETURN_GENERATED_KEYS)) {
+            st.setInt(1, game.getRows());
+            st.setInt(2, game.getCols());
+
+            var res = st.executeUpdate();
+            var keys = st.getGeneratedKeys();
+
+            if (keys.next()) {
+                game.setId(keys.getLong(1));
+            }
+
+            LOGGER.info("Inserted game ({}): {}", res, game.getId());
+        } catch (SQLException e) {
+            LOGGER.error("Error while saving game", e);
+        }
+    }
 
     @Override
     public void deleteById(long id) {
@@ -105,7 +127,7 @@ public class JdbcGameRepository implements IGameRepository {
             st.setLong(1, id);
 
             var res = st.executeUpdate();
-            LOGGER.info("delete game: {}", res);
+            LOGGER.info("Deleted game ({})", res);
         } catch (SQLException e) {
             LOGGER.error("Error while deleting game by id", e);
         }
