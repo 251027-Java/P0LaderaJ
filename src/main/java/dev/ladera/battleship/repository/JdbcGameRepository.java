@@ -41,7 +41,7 @@ public class JdbcGameRepository implements IGameRepository {
     public void save(Game game) {
         try (var st = connection.prepareStatement(
                 """
-            INSERT INTO game
+            INSERT INTO game (rows_val, cols_val)
             VALUES (?, ?)
             """,
                 Statement.RETURN_GENERATED_KEYS)) {

@@ -81,7 +81,7 @@ public class JdbcShipRepository implements IShipRepository {
     public void save(Ship ship) {
         try (var st = connection.prepareStatement(
                 """
-            INSERT INTO ship
+            INSERT INTO ship (row_start, row_end, col_start, col_end, player_id, game_id)
             VALUES (?, ?, ?, ?, ?, ?)
             """,
                 Statement.RETURN_GENERATED_KEYS)) {
