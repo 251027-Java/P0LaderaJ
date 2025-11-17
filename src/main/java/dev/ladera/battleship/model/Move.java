@@ -1,18 +1,18 @@
 package dev.ladera.battleship.model;
 
 public class Move {
-    private long id;
-    private int turn;
-    private int row;
-    private int col;
+    private Long id;
+    private Integer turn;
+    private Integer row;
+    private Integer col;
     private Long playerId;
-    private long gameId;
+    private Long gameId;
 
-    public Move(int turn, int row, int col, Long playerId, long gameId) {
-        this(-1, turn, row, col, playerId, gameId);
+    public Move(Integer turn, Integer row, Integer col, Long playerId, Long gameId) {
+        this(null, turn, row, col, playerId, gameId);
     }
 
-    public Move(long id, int turn, int row, int col, Long playerId, long gameId) {
+    public Move(Long id, Integer turn, Integer row, Integer col, Long playerId, Long gameId) {
         this.id = id;
         this.turn = turn;
         this.row = row;
@@ -21,23 +21,23 @@ public class Move {
         this.gameId = gameId;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public int getTurn() {
+    public Integer getTurn() {
         return turn;
     }
 
-    public int getRow() {
+    public Integer getRow() {
         return row;
     }
 
-    public int getCol() {
+    public Integer getCol() {
         return col;
     }
 
@@ -45,7 +45,7 @@ public class Move {
         return playerId;
     }
 
-    public long getGameId() {
+    public Long getGameId() {
         return gameId;
     }
 }

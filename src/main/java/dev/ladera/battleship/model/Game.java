@@ -3,17 +3,17 @@ package dev.ladera.battleship.model;
 import java.util.List;
 
 public class Game {
-    private long id;
-    private int rows;
-    private int cols;
+    private Long id;
+    private Integer rows;
+    private Integer cols;
     private List<Move> moves;
     private List<Ship> ships;
 
-    public Game(int rows, int cols) {
-        this(-1, rows, cols, null, null);
+    public Game(Integer rows, Integer cols) {
+        this(null, rows, cols, null, null);
     }
 
-    public Game(long id, int rows, int cols, List<Move> moves, List<Ship> ships) {
+    public Game(Long id, Integer rows, Integer cols, List<Move> moves, List<Ship> ships) {
         this.id = id;
         this.rows = rows;
         this.cols = cols;
@@ -29,19 +29,19 @@ public class Game {
         return moves;
     }
 
-    public int getCols() {
+    public Integer getCols() {
         return cols;
     }
 
-    public int getRows() {
+    public Integer getRows() {
         return rows;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 }

@@ -1,19 +1,20 @@
 package dev.ladera.battleship.model;
 
 public class Ship {
-    private long id;
-    private int rowStart;
-    private int rowEnd;
-    private int colStart;
-    private int colEnd;
+    private Long id;
+    private Integer rowStart;
+    private Integer rowEnd;
+    private Integer colStart;
+    private Integer colEnd;
     private Long playerId;
-    private long gameId;
+    private Long gameId;
 
-    public Ship(int rowStart, int rowEnd, int colStart, int colEnd, Long playerId, long gameId) {
-        this(-1, rowStart, rowEnd, colStart, colEnd, playerId, gameId);
+    public Ship(Integer rowStart, Integer rowEnd, Integer colStart, Integer colEnd, Long playerId, Long gameId) {
+        this(null, rowStart, rowEnd, colStart, colEnd, playerId, gameId);
     }
 
-    public Ship(long id, int rowStart, int rowEnd, int colStart, int colEnd, Long playerId, long gameId) {
+    public Ship(
+            Long id, Integer rowStart, Integer rowEnd, Integer colStart, Integer colEnd, Long playerId, Long gameId) {
         this.id = id;
         this.rowStart = rowStart;
         this.rowEnd = rowEnd;
@@ -23,27 +24,27 @@ public class Ship {
         this.gameId = gameId;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
     }
 
-    public long getId() {
+    public Long getId() {
         return id;
     }
 
-    public int getRowStart() {
+    public Integer getRowStart() {
         return rowStart;
     }
 
-    public int getRowEnd() {
+    public Integer getRowEnd() {
         return rowEnd;
     }
 
-    public int getColStart() {
+    public Integer getColStart() {
         return colStart;
     }
 
-    public int getColEnd() {
+    public Integer getColEnd() {
         return colEnd;
     }
 
@@ -51,7 +52,7 @@ public class Ship {
         return playerId;
     }
 
-    public long getGameId() {
+    public Long getGameId() {
         return gameId;
     }
 }
