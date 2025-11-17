@@ -5,14 +5,20 @@ public class Move {
     private int turn;
     private int row;
     private int col;
-    private long playerId;
+    private Long playerId;
+    private long gameId;
 
-    public Move(long id, int turn, int row, int col, long playerId) {
+    public Move(int turn, int row, int col, Long playerId, long gameId) {
+        this(-1, turn, row, col, playerId, gameId);
+    }
+
+    public Move(long id, int turn, int row, int col, Long playerId, long gameId) {
         this.id = id;
         this.turn = turn;
         this.row = row;
         this.col = col;
         this.playerId = playerId;
+        this.gameId = gameId;
     }
 
     public void setId(long id) {
@@ -35,7 +41,11 @@ public class Move {
         return col;
     }
 
-    public long getPlayerId() {
+    public Long getPlayerId() {
         return playerId;
+    }
+
+    public long getGameId() {
+        return gameId;
     }
 }

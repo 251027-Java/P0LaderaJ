@@ -9,6 +9,10 @@ public class Game {
     private List<Move> moves;
     private List<Ship> ships;
 
+    public Game(int rows, int cols) {
+        this(-1, rows, cols, null, null);
+    }
+
     public Game(long id, int rows, int cols, List<Move> moves, List<Ship> ships) {
         this.id = id;
         this.rows = rows;

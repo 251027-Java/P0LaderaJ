@@ -4,7 +4,6 @@ import dev.ladera.battleship.model.Game;
 import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Ship;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -14,20 +13,11 @@ import org.slf4j.LoggerFactory;
 
 public class JdbcGameRepository implements IGameRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcGameRepository.class);
-    private static final String uri = "jdbc:postgresql://localhost:5432/postgres";
-    private static final String user = "postgres";
-    private static final String password = "secret";
 
-    private Connection connection;
+    private final Connection connection;
 
-    public JdbcGameRepository() {
-        try {
-            LOGGER.info("Connecting to PostgreSQL database");
-            connection = DriverManager.getConnection(uri, user, password);
-            LOGGER.info("Successfully connected to PostgreSQL database");
-        } catch (SQLException e) {
-            LOGGER.error("Connection failed", e);
-        }
+    public JdbcGameRepository(Connection connection) {
+        this.connection = connection;
     }
 
     @Override
@@ -68,7 +58,8 @@ public class JdbcGameRepository implements IGameRepository {
                             moveRes.getInt("turn"),
                             moveRes.getInt("row_val"),
                             moveRes.getInt("col_val"),
-                            moveRes.getLong("player_id"));
+                            moveRes.getLong("player_id"),
+                            id);
                     moves.add(move);
                 }
 
@@ -79,7 +70,8 @@ public class JdbcGameRepository implements IGameRepository {
                             shipRes.getInt("row_end"),
                             shipRes.getInt("col_start"),
                             shipRes.getInt("col_end"),
-                            shipRes.getLong("player_id"));
+                            shipRes.getLong("player_id"),
+                            id);
                     ships.add(ship);
                 }
 
