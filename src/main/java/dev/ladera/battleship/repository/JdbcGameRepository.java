@@ -4,6 +4,8 @@ import dev.ladera.battleship.model.Game;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,6 +37,39 @@ public class JdbcGameRepository implements IGameRepository {
         }
 
         return null;
+    }
+
+    @Override
+    public List<Game> findByPlayerId(long id) {
+        List<Game> ret = new ArrayList<>();
+
+        try (var st = connection.prepareStatement(
+                """
+                WITH game_players AS (
+                    SELECT game_id, player_id FROM player_move
+                    UNION ALL
+                    SELECT game_id, player_id FROM ship
+                ),
+                game_filter AS (
+                    SELECT DISTINCT game_id FROM game_players
+                    WHERE player_id = ?
+                )
+                SELECT id, rows_val, cols_val FROM game
+                WHERE game.id IN (select game_filter.game_id FROM game_filter)
+            """)) {
+            st.setLong(1, id);
+
+            var res = st.executeQuery();
+
+            while (res.next()) {
+                ret.add(new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val"), null, null));
+            }
+
+        } catch (SQLException e) {
+            LOGGER.error("Error while finding games by player id: {}", id, e);
+        }
+
+        return ret;
     }
 
     @Override

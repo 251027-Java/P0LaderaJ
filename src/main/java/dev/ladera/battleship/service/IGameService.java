@@ -8,6 +8,7 @@ import dev.ladera.battleship.model.Game;
 import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.model.Ship;
+import java.util.List;
 
 public interface IGameService {
     Player createPlayer(PlayerDto dto);
@@ -17,4 +18,10 @@ public interface IGameService {
     Ship createShip(ShipDto dto);
 
     Move createMove(MoveDto dto);
+
+    List<Game> findGamesByPlayerId(long id);
+
+    List<Ship> findShipsByGameId(long id);
+
+    List<Move> findMovesByGameId(long id);
 }
