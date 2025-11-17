@@ -1,3 +1,5 @@
 package dev.ladera.battleship.service;
 
-public interface IBattleshipService {}
+public interface IBattleshipService {
+    void run();
+}

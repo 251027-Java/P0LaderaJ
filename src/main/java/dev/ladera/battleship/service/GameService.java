@@ -1,3 +1,11 @@
 package dev.ladera.battleship.service;
 
-public class GameService implements IGameService {}
+import dev.ladera.battleship.repository.IGameRepository;
+
+public class GameService implements IGameService {
+    private final IGameRepository gameRepository;
+
+    public GameService(IGameRepository gameRepository) {
+        this.gameRepository = gameRepository;
+    }
+}

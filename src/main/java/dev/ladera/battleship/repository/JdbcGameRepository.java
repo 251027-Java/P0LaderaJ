@@ -1,9 +1,13 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Game;
+import dev.ladera.battleship.model.Move;
+import dev.ladera.battleship.model.Ship;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,12 +25,70 @@ public class JdbcGameRepository implements IGameRepository {
             connection = DriverManager.getConnection(uri, user, password);
             LOGGER.info("Successfully connected to PostgreSQL database");
         } catch (SQLException e) {
-            LOGGER.error(e.toString());
+            LOGGER.error("Connection failed", e);
         }
     }
 
     @Override
     public Game findById(long id) {
+        try (var st1 = connection.prepareStatement(
+                        """
+            SELECT rows_val, cols_val FROM game
+            WHERE id = ?
+            """);
+                var st2 = connection.prepareStatement(
+                        """
+                    SELECT id, turn, row_val, col_val, player_id FROM player_move
+                    WHERE game_id = ?
+                    """);
+                var st3 = connection.prepareStatement(
+                        """
+                    SELECT id, row_start, row_end, col_start, col_end, player_id FROM ship
+                    WHERE game_id = ?
+                    """)) {
+            st1.setLong(1, id);
+            st2.setLong(1, id);
+            st3.setLong(1, id);
+
+            var gameRes = st1.executeQuery();
+            var moveRes = st2.executeQuery();
+            var shipRes = st3.executeQuery();
+
+            if (gameRes.next()) {
+                int rows = gameRes.getInt("rows_val");
+                int cols = gameRes.getInt("cols_val");
+
+                List<Move> moves = new ArrayList<>();
+                List<Ship> ships = new ArrayList<>();
+
+                while (moveRes.next()) {
+                    Move move = new Move(
+                            moveRes.getLong("id"),
+                            moveRes.getInt("turn"),
+                            moveRes.getInt("row_val"),
+                            moveRes.getInt("col_val"),
+                            moveRes.getLong("player_id"));
+                    moves.add(move);
+                }
+
+                while (shipRes.next()) {
+                    Ship ship = new Ship(
+                            shipRes.getLong("id"),
+                            shipRes.getInt("row_start"),
+                            shipRes.getInt("row_end"),
+                            shipRes.getInt("col_start"),
+                            shipRes.getInt("col_end"),
+                            shipRes.getLong("player_id"));
+                    ships.add(ship);
+                }
+
+                return new Game(id, rows, cols, moves, ships);
+            }
+
+        } catch (SQLException e) {
+            LOGGER.error("Error while finding game by id", e);
+        }
+
         return null;
     }
 
@@ -34,5 +96,18 @@ public class JdbcGameRepository implements IGameRepository {
     public void save(Game game) {}
 
     @Override
-    public void delete(Game game) {}
+    public void deleteById(long id) {
+        try (var st = connection.prepareStatement(
+                """
+            DELETE FROM game
+            WHERE id = ?
+            """)) {
+            st.setLong(1, id);
+
+            var res = st.executeUpdate();
+            LOGGER.info("delete game: {}", res);
+        } catch (SQLException e) {
+            LOGGER.error("Error while deleting game by id", e);
+        }
+    }
 }
