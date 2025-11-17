@@ -9,6 +9,8 @@ public interface IMoveRepository {
 
     List<Move> findByGameId(long gameId) throws SQLException;
 
+    Move findLatestMove(long gameId) throws SQLException;
+
     Move save(Move move) throws SQLException;
 
     void deleteById(long id) throws SQLException;

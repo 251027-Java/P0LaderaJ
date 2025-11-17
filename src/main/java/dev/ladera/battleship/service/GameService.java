@@ -80,6 +80,15 @@ public class GameService implements IGameService {
         }
     }
 
+    private boolean isValidTurn(Move latestMove, int turn) {
+        if (latestMove == null) {
+            return turn == 1;
+        }
+
+        if (latestMove.getTurn() == null) return false;
+        return latestMove.getTurn() + 1 == turn;
+    }
+
     @Override
     public Move createMove(MoveDto dto) {
         try {
@@ -90,10 +99,12 @@ public class GameService implements IGameService {
                 return null;
             }
 
-            List<Move> moves = findMovesByGameId(dto.gameId());
-            moves.sort(null);
+            Move latestMove = moveRepository.findLatestMove(dto.gameId());
 
-            // TODO
+            if (!isValidTurn(latestMove, dto.turn())) {
+                LOGGER.info("Tried creating move turn out of order: {} {}", dto, latestMove);
+                return null;
+            }
 
             return moveRepository.save(new Move(dto.turn(), dto.row(), dto.col(), dto.playerId(), dto.gameId()));
         } catch (SQLException e) {
@@ -104,16 +115,31 @@ public class GameService implements IGameService {
 
     @Override
     public List<Game> findGamesByPlayerId(long id) {
-        return List.of();
+        try {
+            return gameRepository.findByPlayerId(id);
+        } catch (SQLException e) {
+            LOGGER.error("Error occurred while finding games by player id: {}", id, e);
+            return null;
+        }
     }
 
     @Override
     public List<Ship> findShipsByGameId(long id) {
-        return List.of();
+        try {
+            return shipRepository.findByGameId(id);
+        } catch (SQLException e) {
+            LOGGER.error("Error occurred while finding ships by game id: {}", id, e);
+            return null;
+        }
     }
 
     @Override
     public List<Move> findMovesByGameId(long id) {
-        return List.of();
+        try {
+            return moveRepository.findByGameId(id);
+        } catch (SQLException e) {
+            LOGGER.error("Error occurred while finding moves by game id: {}", id, e);
+            return null;
+        }
     }
 }

@@ -71,6 +71,33 @@ public class JdbcMoveRepository implements IMoveRepository {
     }
 
     @Override
+    public Move findLatestMove(long gameId) throws SQLException {
+        try (var st = connection.prepareStatement(
+                """
+            SELECT id, turn, row_val, col_val, player_id, game_id FROM player_move
+            WHERE game_id = ?
+            ORDER BY turn DESC
+            LIMIT 1
+            """)) {
+            st.setLong(1, gameId);
+
+            var res = st.executeQuery();
+
+            if (res.next()) {
+                return new Move(
+                        res.getLong("id"),
+                        res.getInt("turn"),
+                        res.getInt("row_val"),
+                        res.getInt("col_val"),
+                        res.getObject("player_id", Long.class),
+                        res.getLong("game_id"));
+            }
+
+            return null;
+        }
+    }
+
+    @Override
     public Move save(Move move) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
