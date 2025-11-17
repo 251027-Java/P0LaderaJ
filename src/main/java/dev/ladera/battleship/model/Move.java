@@ -1,6 +1,6 @@
 package dev.ladera.battleship.model;
 
-public class Move {
+public class Move implements Comparable<Move> {
     private Long id;
     private Integer turn;
     private Integer row;
@@ -58,5 +58,12 @@ public class Move {
                 + col + ", playerId="
                 + playerId + ", gameId="
                 + gameId + '}';
+    }
+
+    @Override
+    public int compareTo(Move o) {
+        if (o == null || o.turn == null) return -1;
+        if (turn == null) return 1;
+        return turn - o.turn;
     }
 }

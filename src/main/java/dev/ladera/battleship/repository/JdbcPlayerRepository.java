@@ -17,10 +17,10 @@ public class JdbcPlayerRepository implements IPlayerRepository {
     }
 
     @Override
-    public Player findById(long id) {
+    public Player findById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
-            SELECT id, username, passphrase, origin_player_id FROM player
+            SELECT id, username, passphrase, originPlayerId FROM player
             WHERE id = ?
             """)) {
             st.setLong(1, id);
@@ -32,21 +32,18 @@ public class JdbcPlayerRepository implements IPlayerRepository {
                         res.getLong("id"),
                         res.getString("username"),
                         res.getString("passphrase"),
-                        res.getObject("origin_player_id", Long.class));
+                        res.getObject("originPlayerId", Long.class));
             }
-
-        } catch (SQLException e) {
-            LOGGER.error("Error while finding player by id: {}", id, e);
         }
 
         return null;
     }
 
     @Override
-    public Player findByUsername(String username) {
+    public Player findByUsername(String username) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
-            SELECT id, username, passphrase, origin_player_id FROM player
+            SELECT id, username, passphrase, originPlayerId FROM player
             WHERE username ILIKE ?
             """)) {
             st.setString(1, username);
@@ -58,21 +55,18 @@ public class JdbcPlayerRepository implements IPlayerRepository {
                         res.getLong("id"),
                         res.getString("username"),
                         res.getString("passphrase"),
-                        res.getObject("origin_player_id", Long.class));
+                        res.getObject("originPlayerId", Long.class));
             }
-
-        } catch (SQLException e) {
-            LOGGER.error("Error while finding player by username: {}", username, e);
         }
 
         return null;
     }
 
     @Override
-    public void save(Player player) {
+    public Player save(Player player) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
-            INSERT INTO player (username, passphrase, origin_player_id)
+            INSERT INTO player (username, passphrase, originPlayerId)
             VALUES (?, ?, ?)
             """,
                 Statement.RETURN_GENERATED_KEYS)) {
@@ -85,16 +79,17 @@ public class JdbcPlayerRepository implements IPlayerRepository {
 
             if (keys.next()) {
                 player.setId(keys.getLong(1));
+
+                LOGGER.info("Inserted player ({}): {}", res, player.getId());
+                return player;
             }
 
-            LOGGER.info("Inserted player ({}): {}", res, player.getId());
-        } catch (SQLException e) {
-            LOGGER.error("Error while saving player", e);
+            return null;
         }
     }
 
     @Override
-    public void deleteById(long id) {
+    public void deleteById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             DELETE FROM player
@@ -104,8 +99,6 @@ public class JdbcPlayerRepository implements IPlayerRepository {
 
             var res = st.executeUpdate();
             LOGGER.info("Deleted player ({})", res);
-        } catch (SQLException e) {
-            LOGGER.error("Error while deleting player by id", e);
         }
     }
 }

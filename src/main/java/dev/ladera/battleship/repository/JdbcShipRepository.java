@@ -18,7 +18,7 @@ public class JdbcShipRepository implements IShipRepository {
     }
 
     @Override
-    public Ship findById(long id) {
+    public Ship findById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             SELECT id, row_start, row_end, col_start, col_end, player_id, game_id FROM ship
@@ -38,16 +38,13 @@ public class JdbcShipRepository implements IShipRepository {
                         res.getObject("player_id", Long.class),
                         res.getLong("game_id"));
             }
-
-        } catch (SQLException e) {
-            LOGGER.error("Error while finding ship by id: {}", id, e);
         }
 
         return null;
     }
 
     @Override
-    public List<Ship> findByGameId(long gameId) {
+    public List<Ship> findByGameId(long gameId) throws SQLException {
         List<Ship> ret = new ArrayList<>();
 
         try (var st = connection.prepareStatement(
@@ -69,16 +66,13 @@ public class JdbcShipRepository implements IShipRepository {
                         res.getObject("player_id", Long.class),
                         res.getLong("game_id")));
             }
-
-        } catch (SQLException e) {
-            LOGGER.error("Error while finding by game id: {}", gameId, e);
         }
 
         return ret;
     }
 
     @Override
-    public void save(Ship ship) {
+    public Ship save(Ship ship) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             INSERT INTO ship (row_start, row_end, col_start, col_end, player_id, game_id)
@@ -97,16 +91,17 @@ public class JdbcShipRepository implements IShipRepository {
 
             if (keys.next()) {
                 ship.setId(keys.getLong(1));
+
+                LOGGER.info("Inserted ship ({}): {}", res, ship.getId());
+                return ship;
             }
 
-            LOGGER.info("Inserted ship ({}): {}", res, ship.getId());
-        } catch (SQLException e) {
-            LOGGER.error("Error while saving ship", e);
+            return null;
         }
     }
 
     @Override
-    public void deleteById(long id) {
+    public void deleteById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             DELETE FROM ship
@@ -116,8 +111,6 @@ public class JdbcShipRepository implements IShipRepository {
 
             var res = st.executeUpdate();
             LOGGER.info("Deleted ship ({})", res);
-        } catch (SQLException e) {
-            LOGGER.error("Error while deleting ship by id", e);
         }
     }
 }

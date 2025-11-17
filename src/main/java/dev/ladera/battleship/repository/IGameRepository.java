@@ -1,11 +1,15 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Game;
+import java.sql.SQLException;
+import java.util.List;
 
 public interface IGameRepository {
-    Game findById(long id);
+    Game findById(long id) throws SQLException;
 
-    void save(Game game);
+    List<Game> findByPlayerId(long id) throws SQLException;
 
-    void deleteById(long id);
+    Game save(Game game) throws SQLException;
+
+    void deleteById(long id) throws SQLException;
 }

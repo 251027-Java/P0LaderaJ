@@ -21,6 +21,10 @@ public class Game {
         this.ships = ships;
     }
 
+    public boolean isValidLocation(int row, int col) {
+        return row >= 0 && row < this.rows && col >= 0 && col < this.cols;
+    }
+
     public List<Ship> getShips() {
         return ships;
     }
