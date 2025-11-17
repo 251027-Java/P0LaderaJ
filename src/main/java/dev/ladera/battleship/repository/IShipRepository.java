@@ -8,7 +8,7 @@ public interface IShipRepository {
 
     List<Ship> findByGameId(long gameId);
 
-    void save(Ship move);
+    void save(Ship ship);
 
     void deleteById(long id);
 }

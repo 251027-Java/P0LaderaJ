@@ -20,21 +20,18 @@ public class JdbcGameRepository implements IGameRepository {
     public Game findById(long id) {
         try (var st = connection.prepareStatement(
                 """
-            SELECT rows_val, cols_val FROM game
+            SELECT id, rows_val, cols_val FROM game
             WHERE id = ?
             """)) {
             st.setLong(1, id);
 
-            var gameRes = st.executeQuery();
+            var res = st.executeQuery();
 
-            if (gameRes.next()) {
-                int rows = gameRes.getInt("rows_val");
-                int cols = gameRes.getInt("cols_val");
-
-                return new Game(id, rows, cols, null, null);
+            if (res.next()) {
+                return new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val"), null, null);
             }
         } catch (SQLException e) {
-            LOGGER.error("Error while finding game by id", e);
+            LOGGER.error("Error while finding game by id: {}", id, e);
         }
 
         return null;
