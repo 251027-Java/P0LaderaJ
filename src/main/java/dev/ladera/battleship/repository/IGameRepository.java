@@ -7,5 +7,5 @@ public interface IGameRepository {
 
     void save(Game game);
 
-    void delete(Game game);
+    void deleteById(long id);
 }
