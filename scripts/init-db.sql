@@ -31,7 +31,7 @@ CREATE TABLE ship (
 );
 
 ALTER TABLE player
-    ADD CONSTRAINT fk_origin_player_id FOREIGN KEY (origin_player_id) REFERENCES player (id) ON DELETE SET NULL;
+    ADD CONSTRAINT fk_origin_player_id FOREIGN KEY (origin_player_id) REFERENCES player (id) ON DELETE CASCADE;
 
 ALTER TABLE player_move
     ADD CONSTRAINT fk_player_id FOREIGN KEY (player_id) REFERENCES player (id) ON DELETE SET NULL;
