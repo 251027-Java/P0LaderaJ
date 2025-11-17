@@ -25,8 +25,16 @@ public class Game {
         return ships;
     }
 
+    public void setShips(List<Ship> ships) {
+        this.ships = ships;
+    }
+
     public List<Move> getMoves() {
         return moves;
+    }
+
+    public void setMoves(List<Move> moves) {
+        this.moves = moves;
     }
 
     public Integer getCols() {
@@ -37,11 +45,11 @@ public class Game {
         return rows;
     }
 
-    public void setId(Long id) {
-        this.id = id;
-    }
-
     public Long getId() {
         return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
 }

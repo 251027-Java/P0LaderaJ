@@ -1,8 +1,7 @@
 package dev.ladera.battleship;
 
 import dev.ladera.battleship.config.Config;
-import dev.ladera.battleship.repository.IGameRepository;
-import dev.ladera.battleship.repository.JdbcGameRepository;
+import dev.ladera.battleship.repository.*;
 import dev.ladera.battleship.service.BattleshipService;
 import dev.ladera.battleship.service.GameService;
 import dev.ladera.battleship.service.IBattleshipService;
@@ -17,8 +16,13 @@ public class Main {
         LOGGER.info("Application started");
 
         Config config = new Config();
-        IGameRepository repository = new JdbcGameRepository(config.getConnection());
-        IGameService gameService = new GameService(repository);
+
+        IShipRepository shipRepository = new JdbcShipRepository(config.getConnection());
+        IMoveRepository moveRepository = new JdbcMoveRepository(config.getConnection());
+        IPlayerRepository playerRepository = new JdbcPlayerRepository(config.getConnection());
+        IGameRepository gameRepository = new JdbcGameRepository(config.getConnection());
+
+        IGameService gameService = new GameService(gameRepository, playerRepository, moveRepository, shipRepository);
 
         IBattleshipService battleshipService = new BattleshipService(gameService);
         battleshipService.run();
