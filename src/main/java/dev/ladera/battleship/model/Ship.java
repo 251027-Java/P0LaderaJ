@@ -1,5 +1,7 @@
 package dev.ladera.battleship.model;
 
+import java.util.Objects;
+
 public class Ship {
     private Long id;
     private Integer rowStart;
@@ -22,6 +24,14 @@ public class Ship {
         this.colEnd = colEnd;
         this.playerId = playerId;
         this.gameId = gameId;
+    }
+
+    public boolean isValidLocation(int row, int col) {
+        return row >= rowStart && row <= rowEnd && col >= colStart && col <= colEnd;
+    }
+
+    public int area() {
+        return (rowEnd - rowStart + 1) * (colEnd - colStart + 1);
     }
 
     public Long getId() {
@@ -66,5 +76,23 @@ public class Ship {
                 + colEnd + ", playerId="
                 + playerId + ", gameId="
                 + gameId + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Ship ship = (Ship) o;
+        return Objects.equals(id, ship.id)
+                && Objects.equals(rowStart, ship.rowStart)
+                && Objects.equals(rowEnd, ship.rowEnd)
+                && Objects.equals(colStart, ship.colStart)
+                && Objects.equals(colEnd, ship.colEnd)
+                && Objects.equals(playerId, ship.playerId)
+                && Objects.equals(gameId, ship.gameId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, rowStart, rowEnd, colStart, colEnd, playerId, gameId);
     }
 }
