@@ -25,4 +25,6 @@ public interface IGameService {
     List<Ship> findShipsByGameId(long id) throws SQLException;
 
     List<Move> findMovesByGameId(long id) throws SQLException;
+
+    Player findPlayerByUsername(String username) throws SQLException;
 }

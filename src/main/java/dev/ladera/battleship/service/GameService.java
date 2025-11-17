@@ -70,7 +70,9 @@ public class GameService implements IGameService {
             return turn == 1;
         }
 
+        // weird situation
         if (latestMove.getTurn() == null) return false;
+
         return latestMove.getTurn() + 1 == turn;
     }
 
@@ -106,5 +108,10 @@ public class GameService implements IGameService {
     @Override
     public List<Move> findMovesByGameId(long id) throws SQLException {
         return moveRepository.findByGameId(id);
+    }
+
+    @Override
+    public Player findPlayerByUsername(String username) throws SQLException {
+        return playerRepository.findByUsername(username);
     }
 }
