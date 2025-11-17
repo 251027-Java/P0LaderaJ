@@ -22,7 +22,7 @@ public class JdbcMoveRepository implements IMoveRepository {
     public Move findById(long id) {
         try (var st = connection.prepareStatement(
                 """
-            SELECT id, turn, row_val, col_val, player_id, game_id FROM move
+            SELECT id, turn, row_val, col_val, player_id, game_id FROM player_move
             WHERE id = ?
             """)) {
             st.setLong(1, id);
@@ -52,7 +52,7 @@ public class JdbcMoveRepository implements IMoveRepository {
 
         try (var st = connection.prepareStatement(
                 """
-            SELECT id, turn, row_val, col_val, player_id, game_id FROM move
+            SELECT id, turn, row_val, col_val, player_id, game_id FROM player_move
             WHERE game_id = ?
             """)) {
             st.setLong(1, gameId);
@@ -80,7 +80,7 @@ public class JdbcMoveRepository implements IMoveRepository {
     public void save(Move move) {
         try (var st = connection.prepareStatement(
                 """
-            INSERT INTO move (turn, row_val, col_val, player_id, game_id)
+            INSERT INTO player_move (turn, row_val, col_val, player_id, game_id)
             VALUES (?, ?, ?, ?, ?)
             """,
                 Statement.RETURN_GENERATED_KEYS)) {
@@ -107,7 +107,7 @@ public class JdbcMoveRepository implements IMoveRepository {
     public void deleteById(long id) {
         try (var st = connection.prepareStatement(
                 """
-            DELETE FROM move
+            DELETE FROM player_move
             WHERE id = ?
             """)) {
             st.setLong(1, id);

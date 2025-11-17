@@ -55,4 +55,16 @@ public class Ship {
     public Long getGameId() {
         return gameId;
     }
+
+    @Override
+    public String toString() {
+        return "Ship{" + "id="
+                + id + ", rowStart="
+                + rowStart + ", rowEnd="
+                + rowEnd + ", colStart="
+                + colStart + ", colEnd="
+                + colEnd + ", playerId="
+                + playerId + ", gameId="
+                + gameId + '}';
+    }
 }

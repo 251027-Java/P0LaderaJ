@@ -48,4 +48,15 @@ public class Move {
     public Long getGameId() {
         return gameId;
     }
+
+    @Override
+    public String toString() {
+        return "Move{" + "id="
+                + id + ", turn="
+                + turn + ", row="
+                + row + ", col="
+                + col + ", playerId="
+                + playerId + ", gameId="
+                + gameId + '}';
+    }
 }

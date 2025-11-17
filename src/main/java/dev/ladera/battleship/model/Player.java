@@ -36,4 +36,13 @@ public class Player {
     public Long getOriginPlayerId() {
         return originPlayerId;
     }
+
+    @Override
+    public String toString() {
+        return "Player{" + "id="
+                + id + ", username='"
+                + username + '\'' + ", passphrase='"
+                + passphrase + '\'' + ", originPlayerId="
+                + originPlayerId + '}';
+    }
 }
