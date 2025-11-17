@@ -37,47 +37,32 @@ public class GameService implements IGameService {
     }
 
     @Override
-    public Player createPlayer(PlayerDto dto) {
-        try {
-            if (playerRepository.findByUsername(dto.username()) != null) {
-                LOGGER.info("Tried creating player with existing username: {}", dto.username());
-                return null;
-            }
-
-            return playerRepository.save(new Player(dto.username(), dto.passphrase(), dto.originPlayerId()));
-        } catch (SQLException e) {
-            LOGGER.error("Error occurred during player creation: {}", dto, e);
+    public Player createPlayer(PlayerDto dto) throws SQLException {
+        if (playerRepository.findByUsername(dto.username()) != null) {
+            LOGGER.info("Tried creating player with existing username: {}", dto.username());
             return null;
         }
+
+        return playerRepository.save(new Player(dto.username(), dto.passphrase(), dto.originPlayerId()));
     }
 
     @Override
-    public Game createGame(GameDto dto) {
-        try {
-            return gameRepository.save(new Game(dto.rows(), dto.cols()));
-        } catch (SQLException e) {
-            LOGGER.error("Error occurred during game creation: {}", dto, e);
-            return null;
-        }
+    public Game createGame(GameDto dto) throws SQLException {
+        return gameRepository.save(new Game(dto.rows(), dto.cols()));
     }
 
     @Override
-    public Ship createShip(ShipDto dto) {
-        try {
-            Game game = gameRepository.findById(dto.gameId());
+    public Ship createShip(ShipDto dto) throws SQLException {
+        Game game = gameRepository.findById(dto.gameId());
 
-            if (!game.isValidLocation(dto.rowStart(), dto.colStart())
-                    || !game.isValidLocation(dto.rowEnd(), dto.colEnd())) {
-                LOGGER.info("Tried creating ship out of bounds of game: {} {}", dto, game);
-                return null;
-            }
-
-            return shipRepository.save(
-                    new Ship(dto.rowStart(), dto.rowEnd(), dto.colStart(), dto.colEnd(), dto.playerId(), dto.gameId()));
-        } catch (SQLException e) {
-            LOGGER.error("Error occurred during ship creation: {}", dto, e);
+        if (!game.isValidLocation(dto.rowStart(), dto.colStart())
+                || !game.isValidLocation(dto.rowEnd(), dto.colEnd())) {
+            LOGGER.info("Tried creating ship out of bounds of game: {} {}", dto, game);
             return null;
         }
+
+        return shipRepository.save(
+                new Ship(dto.rowStart(), dto.rowEnd(), dto.colStart(), dto.colEnd(), dto.playerId(), dto.gameId()));
     }
 
     private boolean isValidTurn(Move latestMove, int turn) {
@@ -90,56 +75,36 @@ public class GameService implements IGameService {
     }
 
     @Override
-    public Move createMove(MoveDto dto) {
-        try {
-            Game game = gameRepository.findById(dto.gameId());
+    public Move createMove(MoveDto dto) throws SQLException {
+        Game game = gameRepository.findById(dto.gameId());
 
-            if (!game.isValidLocation(dto.row(), dto.col())) {
-                LOGGER.info("Tried creating move out of bounds of game: {} {}", dto, game);
-                return null;
-            }
-
-            Move latestMove = moveRepository.findLatestMove(dto.gameId());
-
-            if (!isValidTurn(latestMove, dto.turn())) {
-                LOGGER.info("Tried creating move turn out of order: {} {}", dto, latestMove);
-                return null;
-            }
-
-            return moveRepository.save(new Move(dto.turn(), dto.row(), dto.col(), dto.playerId(), dto.gameId()));
-        } catch (SQLException e) {
-            LOGGER.error("Error occurred during move creation: {}", dto, e);
+        if (!game.isValidLocation(dto.row(), dto.col())) {
+            LOGGER.info("Tried creating move out of bounds of game: {} {}", dto, game);
             return null;
         }
+
+        Move latestMove = moveRepository.findLatestMove(dto.gameId());
+
+        if (!isValidTurn(latestMove, dto.turn())) {
+            LOGGER.info("Tried creating move turn out of order: {} {}", dto, latestMove);
+            return null;
+        }
+
+        return moveRepository.save(new Move(dto.turn(), dto.row(), dto.col(), dto.playerId(), dto.gameId()));
     }
 
     @Override
-    public List<Game> findGamesByPlayerId(long id) {
-        try {
-            return gameRepository.findByPlayerId(id);
-        } catch (SQLException e) {
-            LOGGER.error("Error occurred while finding games by player id: {}", id, e);
-            return null;
-        }
+    public List<Game> findGamesByPlayerId(long id) throws SQLException {
+        return gameRepository.findByPlayerId(id);
     }
 
     @Override
-    public List<Ship> findShipsByGameId(long id) {
-        try {
-            return shipRepository.findByGameId(id);
-        } catch (SQLException e) {
-            LOGGER.error("Error occurred while finding ships by game id: {}", id, e);
-            return null;
-        }
+    public List<Ship> findShipsByGameId(long id) throws SQLException {
+        return shipRepository.findByGameId(id);
     }
 
     @Override
-    public List<Move> findMovesByGameId(long id) {
-        try {
-            return moveRepository.findByGameId(id);
-        } catch (SQLException e) {
-            LOGGER.error("Error occurred while finding moves by game id: {}", id, e);
-            return null;
-        }
+    public List<Move> findMovesByGameId(long id) throws SQLException {
+        return moveRepository.findByGameId(id);
     }
 }
