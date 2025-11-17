@@ -29,7 +29,7 @@ public class Main {
         // playerRepoTest(playerRepository);
         // gameRepoTest(gameRepository);
         // shipRepoTest(shipRepository);
-        moveRepoTest(moveRepository);
+        // moveRepoTest(moveRepository);
 
         IGameService gameService = new GameService(gameRepository, playerRepository, moveRepository, shipRepository);
 
