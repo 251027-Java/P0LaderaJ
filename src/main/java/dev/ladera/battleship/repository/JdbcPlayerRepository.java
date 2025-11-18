@@ -1,10 +1,7 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Player;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import java.sql.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +14,14 @@ public class JdbcPlayerRepository implements IPlayerRepository {
         this.connection = connection;
     }
 
+    private Player toPlayer(ResultSet rs) throws SQLException {
+        return new Player(
+                rs.getLong("id"),
+                rs.getString("username"),
+                rs.getString("passphrase"),
+                rs.getObject("origin_player_id", Long.class));
+    }
+
     @Override
     public Player findById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
@@ -26,14 +31,10 @@ public class JdbcPlayerRepository implements IPlayerRepository {
             """)) {
             st.setLong(1, id);
 
-            var res = st.executeQuery();
+            var rs = st.executeQuery();
 
-            if (res.next()) {
-                return new Player(
-                        res.getLong("id"),
-                        res.getString("username"),
-                        res.getString("passphrase"),
-                        res.getObject("origin_player_id", Long.class));
+            if (rs.next()) {
+                return toPlayer(rs);
             }
         }
 
@@ -49,14 +50,10 @@ public class JdbcPlayerRepository implements IPlayerRepository {
             """)) {
             st.setString(1, username);
 
-            var res = st.executeQuery();
+            var rs = st.executeQuery();
 
-            if (res.next()) {
-                return new Player(
-                        res.getLong("id"),
-                        res.getString("username"),
-                        res.getString("passphrase"),
-                        res.getObject("origin_player_id", Long.class));
+            if (rs.next()) {
+                return toPlayer(rs);
             }
         }
 
@@ -75,13 +72,13 @@ public class JdbcPlayerRepository implements IPlayerRepository {
             st.setString(2, player.getPassphrase());
             st.setObject(3, player.getOriginPlayerId(), Types.BIGINT);
 
-            var res = st.executeUpdate();
+            var rs = st.executeUpdate();
             var keys = st.getGeneratedKeys();
 
             if (keys.next()) {
                 player.setId(keys.getLong(1));
 
-                LOGGER.info("Inserted player ({}): {}", res, player.getId());
+                LOGGER.info("Inserted player ({}): {}", rs, player.getId());
                 return player;
             }
 
@@ -98,8 +95,8 @@ public class JdbcPlayerRepository implements IPlayerRepository {
             """)) {
             st.setLong(1, id);
 
-            var res = st.executeUpdate();
-            LOGGER.info("Deleted player ({})", res);
+            var rs = st.executeUpdate();
+            LOGGER.info("Deleted player ({})", rs);
         }
     }
 }

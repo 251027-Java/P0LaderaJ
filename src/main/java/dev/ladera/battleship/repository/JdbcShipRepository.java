@@ -1,10 +1,7 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Ship;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -18,6 +15,17 @@ public class JdbcShipRepository implements IShipRepository {
         this.connection = connection;
     }
 
+    private Ship toShip(ResultSet rs) throws SQLException {
+        return new Ship(
+                rs.getLong("id"),
+                rs.getInt("row_start"),
+                rs.getInt("row_end"),
+                rs.getInt("col_start"),
+                rs.getInt("col_end"),
+                rs.getObject("player_id", Long.class),
+                rs.getLong("game_id"));
+    }
+
     @Override
     public Ship findById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
@@ -27,17 +35,10 @@ public class JdbcShipRepository implements IShipRepository {
             """)) {
             st.setLong(1, id);
 
-            var res = st.executeQuery();
+            var rs = st.executeQuery();
 
-            if (res.next()) {
-                return new Ship(
-                        res.getLong("id"),
-                        res.getInt("row_start"),
-                        res.getInt("row_end"),
-                        res.getInt("col_start"),
-                        res.getInt("col_end"),
-                        res.getObject("player_id", Long.class),
-                        res.getLong("game_id"));
+            if (rs.next()) {
+                return toShip(rs);
             }
         }
 
@@ -55,17 +56,10 @@ public class JdbcShipRepository implements IShipRepository {
             """)) {
             st.setLong(1, gameId);
 
-            var res = st.executeQuery();
+            var rs = st.executeQuery();
 
-            while (res.next()) {
-                ret.add(new Ship(
-                        res.getLong("id"),
-                        res.getInt("row_start"),
-                        res.getInt("row_end"),
-                        res.getInt("col_start"),
-                        res.getInt("col_end"),
-                        res.getObject("player_id", Long.class),
-                        res.getLong("game_id")));
+            while (rs.next()) {
+                ret.add(toShip(rs));
             }
         }
 
@@ -87,13 +81,13 @@ public class JdbcShipRepository implements IShipRepository {
             st.setObject(5, ship.getPlayerId(), Types.BIGINT);
             st.setLong(6, ship.getGameId());
 
-            var res = st.executeUpdate();
+            var rs = st.executeUpdate();
             var keys = st.getGeneratedKeys();
 
             if (keys.next()) {
                 ship.setId(keys.getLong(1));
 
-                LOGGER.info("Inserted ship ({}): {}", res, ship.getId());
+                LOGGER.info("Inserted ship ({}): {}", rs, ship.getId());
                 return ship;
             }
 
@@ -110,8 +104,8 @@ public class JdbcShipRepository implements IShipRepository {
             """)) {
             st.setLong(1, id);
 
-            var res = st.executeUpdate();
-            LOGGER.info("Deleted ship ({})", res);
+            var rs = st.executeUpdate();
+            LOGGER.info("Deleted ship ({})", rs);
         }
     }
 }

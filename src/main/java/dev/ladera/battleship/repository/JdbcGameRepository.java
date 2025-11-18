@@ -2,6 +2,7 @@ package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Game;
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
@@ -18,6 +19,10 @@ public class JdbcGameRepository implements IGameRepository {
         this.connection = connection;
     }
 
+    private Game toGame(ResultSet rs) throws SQLException {
+        return new Game(rs.getLong("id"), rs.getInt("rows_val"), rs.getInt("cols_val"));
+    }
+
     @Override
     public Game findById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
@@ -27,10 +32,10 @@ public class JdbcGameRepository implements IGameRepository {
             """)) {
             st.setLong(1, id);
 
-            var res = st.executeQuery();
+            var rs = st.executeQuery();
 
-            if (res.next()) {
-                return new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val"));
+            if (rs.next()) {
+                return toGame(rs);
             }
         }
 
@@ -57,10 +62,10 @@ public class JdbcGameRepository implements IGameRepository {
             """)) {
             st.setLong(1, id);
 
-            var res = st.executeQuery();
+            var rs = st.executeQuery();
 
-            while (res.next()) {
-                ret.add(new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val")));
+            while (rs.next()) {
+                ret.add(toGame(rs));
             }
         }
 
@@ -78,13 +83,13 @@ public class JdbcGameRepository implements IGameRepository {
             st.setInt(1, game.getRows());
             st.setInt(2, game.getCols());
 
-            var res = st.executeUpdate();
+            var rs = st.executeUpdate();
             var keys = st.getGeneratedKeys();
 
             if (keys.next()) {
                 game.setId(keys.getLong(1));
 
-                LOGGER.info("Inserted game ({}): {}", res, game.getId());
+                LOGGER.info("Inserted game ({}): {}", rs, game.getId());
                 return game;
             }
 
@@ -101,8 +106,8 @@ public class JdbcGameRepository implements IGameRepository {
             """)) {
             st.setLong(1, id);
 
-            var res = st.executeUpdate();
-            LOGGER.info("Deleted game ({})", res);
+            var rs = st.executeUpdate();
+            LOGGER.info("Deleted game ({})", rs);
         }
     }
 }
