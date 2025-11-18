@@ -4,6 +4,7 @@ import dev.ladera.battleship.model.Player;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,7 +21,7 @@ public class JdbcPlayerRepository implements IPlayerRepository {
     public Player findById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
-            SELECT id, username, passphrase, originPlayerId FROM player
+            SELECT id, username, passphrase, origin_player_id FROM player
             WHERE id = ?
             """)) {
             st.setLong(1, id);
@@ -32,7 +33,7 @@ public class JdbcPlayerRepository implements IPlayerRepository {
                         res.getLong("id"),
                         res.getString("username"),
                         res.getString("passphrase"),
-                        res.getObject("originPlayerId", Long.class));
+                        res.getObject("origin_player_id", Long.class));
             }
         }
 
@@ -43,7 +44,7 @@ public class JdbcPlayerRepository implements IPlayerRepository {
     public Player findByUsername(String username) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
-            SELECT id, username, passphrase, originPlayerId FROM player
+            SELECT id, username, passphrase, origin_player_id FROM player
             WHERE username ILIKE ?
             """)) {
             st.setString(1, username);
@@ -55,7 +56,7 @@ public class JdbcPlayerRepository implements IPlayerRepository {
                         res.getLong("id"),
                         res.getString("username"),
                         res.getString("passphrase"),
-                        res.getObject("originPlayerId", Long.class));
+                        res.getObject("origin_player_id", Long.class));
             }
         }
 
@@ -66,13 +67,13 @@ public class JdbcPlayerRepository implements IPlayerRepository {
     public Player save(Player player) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
-            INSERT INTO player (username, passphrase, originPlayerId)
+            INSERT INTO player (username, passphrase, origin_player_id)
             VALUES (?, ?, ?)
             """,
                 Statement.RETURN_GENERATED_KEYS)) {
             st.setString(1, player.getUsername());
             st.setString(2, player.getPassphrase());
-            st.setObject(3, player.getOriginPlayerId());
+            st.setObject(3, player.getOriginPlayerId(), Types.BIGINT);
 
             var res = st.executeUpdate();
             var keys = st.getGeneratedKeys();
