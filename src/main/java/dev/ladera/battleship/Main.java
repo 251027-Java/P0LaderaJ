@@ -6,10 +6,11 @@ import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.repository.*;
-import dev.ladera.battleship.service.BattleshipService;
+import dev.ladera.battleship.screen.IBattleshipScreen;
+import dev.ladera.battleship.screen.JlineBattleshipScreen;
 import dev.ladera.battleship.service.GameService;
-import dev.ladera.battleship.service.IBattleshipService;
 import dev.ladera.battleship.service.IGameService;
+import java.io.IOException;
 import java.sql.SQLException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +18,7 @@ import org.slf4j.LoggerFactory;
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
 
-    static void main() {
+    static void main() throws IOException {
         LOGGER.info("Application started");
 
         Config config = new Config();
@@ -34,8 +35,8 @@ public class Main {
 
         IGameService gameService = new GameService(gameRepository, playerRepository, moveRepository, shipRepository);
 
-        IBattleshipService battleshipService = new BattleshipService(gameService);
-        battleshipService.run();
+        IBattleshipScreen battleshipScreen = new JlineBattleshipScreen(gameService);
+        battleshipScreen.run();
 
         LOGGER.info("Application closing");
     }

@@ -1,6 +1,6 @@
-package dev.ladera.battleship.ui;
+package dev.ladera.battleship.screen;
 
-public enum Screen {
+public enum ScreenType {
     STARTUP,
     SIGN_IN,
     CREATE_ACCOUNT,
