@@ -30,7 +30,7 @@ public class JdbcGameRepository implements IGameRepository {
             var res = st.executeQuery();
 
             if (res.next()) {
-                return new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val"), null, null);
+                return new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val"));
             }
         }
 
@@ -60,7 +60,7 @@ public class JdbcGameRepository implements IGameRepository {
             var res = st.executeQuery();
 
             while (res.next()) {
-                ret.add(new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val"), null, null));
+                ret.add(new Game(res.getLong("id"), res.getInt("rows_val"), res.getInt("cols_val")));
             }
         }
 

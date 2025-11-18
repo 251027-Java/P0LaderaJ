@@ -1,5 +1,7 @@
 package dev.ladera.battleship.model;
 
+import java.util.Objects;
+
 public class Player {
     private Long id;
     private String username;
@@ -44,5 +46,20 @@ public class Player {
                 + username + '\'' + ", passphrase='"
                 + passphrase + '\'' + ", originPlayerId="
                 + originPlayerId + '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Player player = (Player) o;
+        return Objects.equals(id, player.id)
+                && Objects.equals(username, player.username)
+                && Objects.equals(passphrase, player.passphrase)
+                && Objects.equals(originPlayerId, player.originPlayerId);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, username, passphrase, originPlayerId);
     }
 }
