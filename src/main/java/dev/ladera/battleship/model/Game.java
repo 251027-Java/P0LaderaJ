@@ -2,6 +2,7 @@ package dev.ladera.battleship.model;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class Game {
@@ -27,18 +28,32 @@ public class Game {
     }
 
     private void processMove(Ship ship, Move move) {
+        // ensure the shipowner and move initiator are from different players
         if (Objects.equals(ship.getPlayerId(), move.getPlayerId())) return;
 
+        // check if ship is already destroyed
+        if (shipHealth.get(ship) <= 0) return;
+
+        // check if hit
         if (ship.isValidLocation(move.getRow(), move.getCol())) {
             shipHealth.put(ship, shipHealth.get(ship) - 1);
 
-            if (shipHealth.get(ship) == 0) {
-                var playerId = ship.getPlayerId();
-                shipsRemaining.put(playerId, shipsRemaining.get(playerId) - 1);
+            if (shipHealth.get(ship) > 0) return;
 
-                if (shipsRemaining.get(playerId) <= 0) {
-                    // TODO set winnerId
-                }
+            // ship is destroyed
+            var playerId = ship.getPlayerId();
+            shipsRemaining.put(playerId, shipsRemaining.get(playerId) - 1);
+
+            if (shipsRemaining.get(playerId) > 0) return;
+
+            // player ran out of ships, so check if there's a winner
+            List<Long> alivePlayers = shipsRemaining.entrySet().stream()
+                    .filter(e -> e.getValue() > 0)
+                    .map(Map.Entry::getKey)
+                    .toList();
+
+            if (alivePlayers.size() == 1) {
+                winnerId = alivePlayers.getFirst();
             }
         }
     }
@@ -47,20 +62,29 @@ public class Game {
         shipHealth = new HashMap<>();
         shipsRemaining = new HashMap<>();
 
-        for (var e : ships) {
-            shipHealth.put(e, e.area());
-
-            var playerId = e.getPlayerId();
-            shipsRemaining.put(playerId, shipsRemaining.getOrDefault(playerId, 0) + 1);
-        }
-
+        ships.forEach(this::processShip);
         moves.sort(null);
 
         for (var move : moves) {
-            for (var ship : ships) {
-                processMove(ship, move);
-            }
+            ships.forEach(e -> processMove(e, move));
         }
+    }
+
+    private void processShip(Ship ship) {
+        shipHealth.put(ship, ship.area());
+
+        var playerId = ship.getPlayerId();
+        shipsRemaining.put(playerId, shipsRemaining.getOrDefault(playerId, 0) + 1);
+    }
+
+    public void addMove(Move move) {
+        moves.add(move);
+        ships.forEach(e -> processMove(e, move));
+    }
+
+    public void addShip(Ship ship) {
+        ships.add(ship);
+        processShip(ship);
     }
 
     public boolean isValidLocation(int row, int col) {
@@ -69,6 +93,10 @@ public class Game {
 
     public boolean hasWinner() {
         return winnerId != null;
+    }
+
+    public Long getWinnerId() {
+        return winnerId;
     }
 
     public List<Ship> getShips() {
