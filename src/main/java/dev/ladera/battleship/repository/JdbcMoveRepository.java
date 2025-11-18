@@ -1,10 +1,7 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Move;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.sql.Types;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -19,6 +16,16 @@ public class JdbcMoveRepository implements IMoveRepository {
         this.connection = connection;
     }
 
+    private Move toMove(ResultSet rs) throws SQLException {
+        return new Move(
+                rs.getLong("id"),
+                rs.getInt("turn"),
+                rs.getInt("row_val"),
+                rs.getInt("col_val"),
+                rs.getObject("player_id", Long.class),
+                rs.getLong("game_id"));
+    }
+
     @Override
     public Move findById(long id) throws SQLException {
         try (var st = connection.prepareStatement(
@@ -28,16 +35,10 @@ public class JdbcMoveRepository implements IMoveRepository {
             """)) {
             st.setLong(1, id);
 
-            var res = st.executeQuery();
+            var rs = st.executeQuery();
 
-            if (res.next()) {
-                return new Move(
-                        res.getLong("id"),
-                        res.getInt("turn"),
-                        res.getInt("row_val"),
-                        res.getInt("col_val"),
-                        res.getObject("player_id", Long.class),
-                        res.getLong("game_id"));
+            if (rs.next()) {
+                return toMove(rs);
             }
         }
 
@@ -55,16 +56,10 @@ public class JdbcMoveRepository implements IMoveRepository {
             """)) {
             st.setLong(1, gameId);
 
-            var res = st.executeQuery();
+            var rs = st.executeQuery();
 
-            while (res.next()) {
-                ret.add(new Move(
-                        res.getLong("id"),
-                        res.getInt("turn"),
-                        res.getInt("row_val"),
-                        res.getInt("col_val"),
-                        res.getObject("player_id", Long.class),
-                        res.getLong("game_id")));
+            while (rs.next()) {
+                ret.add(toMove(rs));
             }
         }
 
@@ -82,16 +77,10 @@ public class JdbcMoveRepository implements IMoveRepository {
             """)) {
             st.setLong(1, gameId);
 
-            var res = st.executeQuery();
+            var rs = st.executeQuery();
 
-            if (res.next()) {
-                return new Move(
-                        res.getLong("id"),
-                        res.getInt("turn"),
-                        res.getInt("row_val"),
-                        res.getInt("col_val"),
-                        res.getObject("player_id", Long.class),
-                        res.getLong("game_id"));
+            if (rs.next()) {
+                return toMove(rs);
             }
 
             return null;
@@ -112,13 +101,13 @@ public class JdbcMoveRepository implements IMoveRepository {
             st.setObject(4, move.getPlayerId(), Types.BIGINT);
             st.setLong(5, move.getGameId());
 
-            var res = st.executeUpdate();
+            var rs = st.executeUpdate();
             var keys = st.getGeneratedKeys();
 
             if (keys.next()) {
                 move.setId(keys.getLong(1));
 
-                LOGGER.info("Inserted move ({}): {}", res, move.getId());
+                LOGGER.info("Inserted move ({}): {}", rs, move.getId());
                 return move;
             }
 
@@ -135,8 +124,8 @@ public class JdbcMoveRepository implements IMoveRepository {
             """)) {
             st.setLong(1, id);
 
-            var res = st.executeUpdate();
-            LOGGER.info("Deleted move ({})", res);
+            var rs = st.executeUpdate();
+            LOGGER.info("Deleted move ({})", rs);
         }
     }
 }
