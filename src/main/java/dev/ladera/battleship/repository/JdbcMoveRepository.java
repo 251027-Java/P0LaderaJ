@@ -4,6 +4,7 @@ import dev.ladera.battleship.model.Move;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
@@ -108,7 +109,7 @@ public class JdbcMoveRepository implements IMoveRepository {
             st.setInt(1, move.getTurn());
             st.setInt(2, move.getRow());
             st.setInt(3, move.getCol());
-            st.setObject(4, move.getPlayerId());
+            st.setObject(4, move.getPlayerId(), Types.BIGINT);
             st.setLong(5, move.getGameId());
 
             var res = st.executeUpdate();
