@@ -4,14 +4,18 @@ import dev.ladera.battleship.config.StringConstants;
 import dev.ladera.battleship.dto.PlayerDto;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.service.IGameService;
-import java.io.IOException;
-import java.sql.SQLException;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
+import org.jline.utils.AttributedString;
+import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
 
 public class JlineBattleshipScreen implements IBattleshipScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(JlineBattleshipScreen.class);
@@ -53,7 +57,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         if (clearScrollBackBuffer) {
             terminal.writer().print("\033[3J");
-            terminal.writer().flush();
+            terminal.flush();
         }
     }
 
@@ -68,9 +72,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     public ScreenType startUp() {
         clearScreen(false);
 
-        terminal.writer()
-                .println(
-                        """
+        terminal.writer().println("""
 
             █████▄  ▄▄▄ ▄▄▄▄▄▄ ▄▄▄▄▄▄ ▄▄    ▄▄▄▄▄  ▄▄▄▄ ▄▄ ▄▄ ▄▄ ▄▄▄▄
             ██▄▄██ ██▀██  ██     ██   ██    ██▄▄  ███▄▄ ██▄██ ██ ██▄█▀
@@ -92,6 +94,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         try {
             var res = prompt.prompt(builder.build());
+            prompt.prompt(List.of());
+
             String action = res.get("action").getResult();
 
             switch (StringConstants.fromValue(action)) {
@@ -134,7 +138,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             // TODO check if able to log in
             terminal.writer().println("| " + username + " | " + passphrase);
-            terminal.writer().flush();
+            terminal.flush();
         } catch (IOException e) {
             LOGGER.error("sign in", e);
         }
@@ -142,9 +146,11 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         return null;
     }
 
-    private String promptUsername() throws IOException, SQLException {
+    private String promptUsernameCreation() throws IOException, SQLException {
         boolean done = false;
         String username = null;
+
+        var cursor = terminal.getCursorPosition(null);
 
         while (!done) {
             var builder = prompt.getPromptBuilder()
@@ -157,34 +163,59 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             username = res.get("username").getResult();
 
             Player player = gameService.findPlayerByUsername(username);
+            done = player == null;
 
-            if (player != null) {
-                // TODO duplicate username, prompt again
+            if (!done) {
+                // terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 1, cursor.getX());
+                // var str = new AttributedString(
+                //         "Username already exists.", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+                // str.println(terminal);
+                //
+                // terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY(), cursor.getX());
             }
         }
 
         return username;
     }
 
-    private String promptPassphrase() throws IOException {
-        var builder = prompt.getPromptBuilder()
-                .createInputPrompt()
-                .name("passphrase")
-                .message("Passphrase:")
-                .mask('*')
-                .addPrompt()
-                .createInputPrompt()
-                .name("re-passphrase")
-                .message("Re-enter your passphrase:")
-                .mask('*')
-                .addPrompt();
+    private String promptPassphraseCreation() throws IOException {
+        boolean done = false;
+        String p1 = null;
 
-        var res = prompt.prompt(builder.build());
-        String p1 = res.get("passphrase").getResult();
-        String p2 = res.get("re-passphrase").getResult();
+        var cursor = terminal.getCursorPosition(null);
 
-        if (!p1.equals(p2)) {
-            // TODO passphrase was not the same
+        while (!done) {
+            var builder = prompt.getPromptBuilder()
+                    .createInputPrompt()
+                    .name("passphrase")
+                    .message("Passphrase:")
+                    .mask('*')
+                    .addPrompt()
+                    .createInputPrompt()
+                    .name("re-passphrase")
+                    .message("Re-enter your passphrase:")
+                    .mask('*')
+                    .addPrompt();
+
+            var res = prompt.prompt(builder.build());
+            prompt.prompt(List.of());
+
+            p1 = res.get("passphrase").getResult();
+            String p2 = res.get("re-passphrase").getResult();
+
+            done = p1.equals(p2);
+
+            if (!done) {
+                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 3, cursor.getX());
+
+                var str = new AttributedString(
+                        "Passphrases did not match.", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+
+                str.println(terminal);
+
+                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY(), cursor.getX());
+                terminal.flush();
+            }
         }
 
         return p1;
@@ -195,8 +226,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         clearScreen(false);
 
         try {
-            String username = promptUsername();
-            String passphrase = promptPassphrase();
+            String username = promptUsernameCreation();
+            String passphrase = promptPassphraseCreation();
 
             player = gameService.createPlayer(new PlayerDto(username, passphrase, null));
 
