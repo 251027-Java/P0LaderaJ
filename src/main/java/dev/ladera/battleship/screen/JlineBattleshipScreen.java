@@ -133,6 +133,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         try {
             var res = prompt.prompt(builder.build());
+            // prompt.prompt(List.of()); // TODO is this necessary?
             String username = res.get("username").getResult();
             String passphrase = res.get("passphrase").getResult();
 
@@ -151,6 +152,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         String username = null;
 
         var cursor = terminal.getCursorPosition(null);
+        LOGGER.info("username cursor: {}", cursor);
 
         while (!done) {
             var builder = prompt.getPromptBuilder()
@@ -160,18 +162,24 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                     .addPrompt();
 
             var res = prompt.prompt(builder.build());
+            prompt.prompt(List.of());
+            LOGGER.info("cursor after re-prompting: {}", terminal.getCursorPosition(null));
             username = res.get("username").getResult();
 
             Player player = gameService.findPlayerByUsername(username);
+            // TODO validate length of username
             done = player == null;
 
             if (!done) {
-                // terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 1, cursor.getX());
-                // var str = new AttributedString(
-                //         "Username already exists.", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
-                // str.println(terminal);
-                //
-                // terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY(), cursor.getX());
+                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 2, cursor.getX());
+                terminal.flush();
+
+                var str = new AttributedString("Try again.", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+                str.println(terminal);
+                terminal.flush();
+
+                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY(), cursor.getX());
+                terminal.flush();
             }
         }
 
