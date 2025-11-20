@@ -4,6 +4,8 @@ import dev.ladera.battleship.dto.GameDto;
 import dev.ladera.battleship.dto.MoveDto;
 import dev.ladera.battleship.dto.PlayerDto;
 import dev.ladera.battleship.dto.ShipDto;
+import dev.ladera.battleship.exception.InvalidUsernameException;
+import dev.ladera.battleship.exception.UsernameExistsException;
 import dev.ladera.battleship.model.Game;
 import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Player;
@@ -12,10 +14,11 @@ import dev.ladera.battleship.repository.IGameRepository;
 import dev.ladera.battleship.repository.IMoveRepository;
 import dev.ladera.battleship.repository.IPlayerRepository;
 import dev.ladera.battleship.repository.IShipRepository;
-import java.sql.SQLException;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.SQLException;
+import java.util.List;
 
 public class GameService implements IGameService {
     private static final Logger LOGGER = LoggerFactory.getLogger(GameService.class);
@@ -36,11 +39,18 @@ public class GameService implements IGameService {
         this.shipRepository = shipRepository;
     }
 
+    private boolean isValidUsername(String username) {
+        return username.matches("[a-zA-Z0-9]{3,30}");
+    }
+
     @Override
     public Player createPlayer(PlayerDto dto) throws SQLException {
+        if (!isValidUsername(dto.username())) {
+            throw new InvalidUsernameException("Username must only contain 3-30 alphanumeric characters");
+        }
+
         if (playerRepository.findByUsername(dto.username()) != null) {
-            LOGGER.info("Tried creating player with existing username: {}", dto.username());
-            return null;
+            throw new UsernameExistsException("Username already exists");
         }
 
         return playerRepository.save(new Player(dto.username(), dto.passphrase(), dto.originPlayerId()));
