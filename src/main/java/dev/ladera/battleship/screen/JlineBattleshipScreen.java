@@ -2,8 +2,14 @@ package dev.ladera.battleship.screen;
 
 import dev.ladera.battleship.config.StringConstants;
 import dev.ladera.battleship.dto.PlayerDto;
+import dev.ladera.battleship.exception.InvalidPassphraseException;
+import dev.ladera.battleship.exception.InvalidUsernameException;
+import dev.ladera.battleship.exception.UsernameExistsException;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.service.IGameService;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
@@ -14,12 +20,9 @@ import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
-
 public class JlineBattleshipScreen implements IBattleshipScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(JlineBattleshipScreen.class);
+    private static final AttributedStyle ERROR_STYLE = AttributedStyle.DEFAULT.foreground(AttributedStyle.RED);
 
     private IGameService gameService;
     private Terminal terminal;
@@ -73,7 +76,9 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     public ScreenType startUp() {
         clearScreen(false);
 
-        terminal.writer().println("""
+        terminal.writer()
+                .println(
+                        """
 
             █████▄  ▄▄▄ ▄▄▄▄▄▄ ▄▄▄▄▄▄ ▄▄    ▄▄▄▄▄  ▄▄▄▄ ▄▄ ▄▄ ▄▄ ▄▄▄▄
             ██▄▄██ ██▀██  ██     ██   ██    ██▄▄  ███▄▄ ██▄██ ██ ██▄█▀
@@ -152,27 +157,50 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         prompt.prompt(List.of());
     }
 
+    private void clearLine(int row) {
+        var cursor = terminal.getCursorPosition(null);
+
+        placeCursor(row, 0);
+        terminal.puts(InfoCmp.Capability.clr_eol);
+
+        placeCursor(cursor);
+    }
+
+    private void clearLines(int start, int end) {
+        for (int i = start; i <= end; i++) {
+            clearLine(i);
+        }
+    }
+
+    private void placeCursor(Cursor cursor) {
+        placeCursor(cursor.getY(), cursor.getX());
+    }
+
+    private void placeCursor(int row, int col) {
+        terminal.puts(InfoCmp.Capability.cursor_address, row, col);
+    }
+
     private void logCursor(String message) {
         LOGGER.info("{}: {}", message, terminal.getCursorPosition(null));
     }
 
     private void placeNextPromptAt(Cursor cursor) throws IOException {
-        placeNextPromptAt(cursor.getY(),cursor.getX());
+        placeNextPromptAt(cursor.getY(), cursor.getX());
     }
 
     private void placeNextPromptAt(int row, int col) throws IOException {
-        terminal.puts(InfoCmp.Capability.cursor_address, row, col);
+        placeCursor(row, col);
         terminal.puts(InfoCmp.Capability.newline);
         resetPrompt();
     }
 
     private void remakePromptAt(Cursor cursor) throws IOException {
-        remakePromptAt(cursor.getY(),cursor.getX());
+        remakePromptAt(cursor.getY(), cursor.getX());
     }
 
     private void remakePromptAt(int row, int col) throws IOException {
         resetPrompt();
-        terminal.puts(InfoCmp.Capability.cursor_address,row,col);
+        placeCursor(row, col);
         terminal.puts(InfoCmp.Capability.clr_eol);
     }
 
@@ -193,21 +221,21 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             username = res.get("username").getResult();
 
             Player player = gameService.findPlayerByUsername(username);
-            // TODO validate length of username
             done = player == null;
 
             if (!done) {
-                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 1, cursor.getX());
-                var str = new AttributedString(
-                        "Try again."
-                            + " oidsjfgiosdjfgoijsdfoghijsfdoighjoifgjhoisdjfgh08sgshjsogihjoisfgjhoisjgohijfdoghjfoghi",
-                        AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+                resetPrompt();
+
+                clearLine(0);
+                placeCursor(0, 0);
+                var str = new AttributedString("Username already exists", ERROR_STYLE);
                 str.print(terminal);
 
-                remakePromptAt(cursor.getY(), cursor.getX());
+                placeCursor(cursor);
             }
         }
 
+        clearLine(0);
         placeNextPromptAt(cursor.getY() + 1, cursor.getX());
 
         return username;
@@ -240,16 +268,19 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             done = p1.equals(p2);
 
             if (!done) {
-                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 2, cursor.getX());
-                var str = new AttributedString(
-                        "Passphrases did not match.", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+                resetPrompt();
+
+                clearLine(0);
+                placeCursor(0, 0);
+                var str = new AttributedString("Passphrases did not match.", ERROR_STYLE);
                 str.print(terminal);
 
-                remakePromptAt(cursor.getY(),cursor.getX());
+                placeCursor(cursor);
             }
         }
 
-        placeNextPromptAt(cursor.getY()+2,cursor.getX());
+        clearLine(0);
+        placeNextPromptAt(cursor.getY() + 2, cursor.getX());
 
         return p1;
     }
@@ -258,20 +289,25 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     public ScreenType createAccount() {
         clearScreen(false);
 
-        try {
-            String username = promptUsernameCreation();
-            String passphrase = promptPassphraseCreation();
+        while (true) {
+            try {
+                placeCursor(1, 0);
+                String username = promptUsernameCreation();
+                String passphrase = promptPassphraseCreation();
 
-            player = gameService.createPlayer(new PlayerDto(username, passphrase, null));
+                player = gameService.createPlayer(new PlayerDto(username, passphrase, null));
 
-            if (player != null) {
                 return ScreenType.MAIN_MENU;
+            } catch (IOException | SQLException e) {
+                LOGGER.error("create account", e);
+                return null;
+            } catch (InvalidUsernameException | UsernameExistsException | InvalidPassphraseException e) {
+                clearLines(0, 2);
+                placeCursor(0, 0);
+                var str = new AttributedString(e.getMessage(), ERROR_STYLE);
+                str.println(terminal);
             }
-        } catch (IOException | SQLException e) {
-            LOGGER.error("create account", e);
         }
-
-        return null;
     }
 
     @Override

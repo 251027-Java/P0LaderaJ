@@ -42,10 +42,18 @@ public class GameService implements IGameService {
         return username.matches("[a-zA-Z0-9]{3,30}");
     }
 
+    private boolean isValidPassphrase(String passphrase) {
+        return passphrase.length() >= 5 && passphrase.length() <= 50;
+    }
+
     @Override
     public Player createPlayer(PlayerDto dto) throws SQLException {
         if (!isValidUsername(dto.username())) {
             throw new InvalidUsernameException("Username must only contain 3-30 alphanumeric characters");
+        }
+
+        if (!isValidPassphrase(dto.passphrase())) {
+            throw new InvalidPassphraseException("Passphrase must be between 5 and 50 characters");
         }
 
         if (playerRepository.findByUsername(dto.username()) != null) {
