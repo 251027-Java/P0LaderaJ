@@ -15,7 +15,6 @@ import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
-import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
@@ -24,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 public class JlineBattleshipScreen implements IBattleshipScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(JlineBattleshipScreen.class);
-    private static final AttributedStyle ERROR_STYLE = AttributedStyle.DEFAULT.foreground(AttributedStyle.RED);
 
     private IGameService gameService;
     private Terminal terminal;
@@ -143,11 +141,16 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         clearScreen(false);
 
         var builder = prompt.getPromptBuilder();
-        builder.createInputPrompt().name("username").message("Username:").addPrompt();
+        builder.createInputPrompt()
+                .name("username")
+                .message("Username")
+                .defaultValue("")
+                .addPrompt();
         builder.createInputPrompt()
                 .name("passphrase")
-                .message("Passphrase:")
+                .message("Passphrase")
                 .mask('*')
+                .defaultValue("")
                 .addPrompt();
 
         while (true) {
@@ -171,9 +174,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 return null;
             } catch (RuntimeException e) {
                 clearLines(0, 2);
-                placeCursor(0, 0);
-                var str = new AttributedString(e.getMessage(), ERROR_STYLE);
-                str.print(terminal);
+                displayError(0, 0, e.getMessage());
             }
         }
     }
@@ -229,6 +230,20 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         terminal.puts(InfoCmp.Capability.clr_eol);
     }
 
+    private void displayError(int row, int col, String message) {
+        clearLine(row);
+        placeCursor(row, col);
+
+        var str = new AttributedStringBuilder()
+                .style(AttributedStyle.DEFAULT.background(AttributedStyle.RED))
+                .append(" ERROR ")
+                .style(AttributedStyle.DEFAULT.foreground(AttributedStyle.RED))
+                .append(" ")
+                .append(message);
+
+        str.print(terminal);
+    }
+
     private String promptUsernameCreation() throws IOException, SQLException {
         boolean done = false;
         String username = null;
@@ -237,7 +252,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         var builder = prompt.getPromptBuilder()
                 .createInputPrompt()
                 .name("username")
-                .message("Username:")
+                .message("Username")
+                .defaultValue("")
                 .addPrompt();
 
         while (!done) {
@@ -248,12 +264,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             if (!done) {
                 resetPrompt();
-
-                clearLine(0);
-                placeCursor(0, 0);
-                var str = new AttributedString("Username already exists", ERROR_STYLE);
-                str.print(terminal);
-
+                displayError(0, 0, "Username already exists");
                 placeCursor(cursor);
             }
         }
@@ -276,11 +287,13 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                     .name("passphrase")
                     .message("Passphrase:")
                     .mask('*')
+                    .defaultValue("")
                     .addPrompt()
                     .createInputPrompt()
                     .name("re-passphrase")
                     .message("Re-enter your passphrase:")
                     .mask('*')
+                    .defaultValue("")
                     .addPrompt();
 
             var res = prompt.prompt(builder.build());
@@ -292,12 +305,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             if (!done) {
                 resetPrompt();
-
-                clearLine(0);
-                placeCursor(0, 0);
-                var str = new AttributedString("Passphrases did not match.", ERROR_STYLE);
-                str.print(terminal);
-
+                displayError(0, 0, "Passphrases did not match");
                 placeCursor(cursor);
             }
         }
@@ -326,9 +334,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 return null;
             } catch (InvalidUsernameException | UsernameExistsException | InvalidPassphraseException e) {
                 clearLines(0, 2);
-                placeCursor(0, 0);
-                var str = new AttributedString(e.getMessage(), ERROR_STYLE);
-                str.println(terminal);
+                displayError(0, 0, e.getMessage());
             }
         }
     }
