@@ -21,22 +21,23 @@ public class Main {
     static void main() throws IOException {
         LOGGER.info("Application started");
 
-        Config config = new Config();
+        try (Config config = new Config()) {
+            IShipRepository shipRepository = new JdbcShipRepository(config.getConnection());
+            IMoveRepository moveRepository = new JdbcMoveRepository(config.getConnection());
+            IPlayerRepository playerRepository = new JdbcPlayerRepository(config.getConnection());
+            IGameRepository gameRepository = new JdbcGameRepository(config.getConnection());
 
-        IShipRepository shipRepository = new JdbcShipRepository(config.getConnection());
-        IMoveRepository moveRepository = new JdbcMoveRepository(config.getConnection());
-        IPlayerRepository playerRepository = new JdbcPlayerRepository(config.getConnection());
-        IGameRepository gameRepository = new JdbcGameRepository(config.getConnection());
+            // playerRepoTest(playerRepository);
+            // gameRepoTest(gameRepository);
+            // shipRepoTest(shipRepository);
+            // moveRepoTest(moveRepository);
 
-        // playerRepoTest(playerRepository);
-        // gameRepoTest(gameRepository);
-        // shipRepoTest(shipRepository);
-        // moveRepoTest(moveRepository);
+            IGameService gameService =
+                    new GameService(gameRepository, playerRepository, moveRepository, shipRepository);
 
-        IGameService gameService = new GameService(gameRepository, playerRepository, moveRepository, shipRepository);
-
-        IBattleshipScreen battleshipScreen = new JlineBattleshipScreen(gameService);
-        battleshipScreen.run();
+            IBattleshipScreen battleshipScreen = new JlineBattleshipScreen(gameService);
+            battleshipScreen.run();
+        }
 
         LOGGER.info("Application closing");
     }

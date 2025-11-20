@@ -1,5 +1,10 @@
 package dev.ladera.battleship.screen;
 
+/*
+ascii art text
+https://patorjk.com/software/taag
+ */
+
 import dev.ladera.battleship.config.StringConstants;
 import dev.ladera.battleship.dto.PlayerDto;
 import dev.ladera.battleship.exception.InvalidPassphraseException;
@@ -72,6 +77,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             currentScreen = processScreen(currentScreen);
         }
 
+        quit();
+
         try {
             terminal.close();
         } catch (IOException e) {
@@ -84,7 +91,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         clearScreen(false);
 
         terminal.writer()
-                .println(
+                .print(
                         """
 
             █████▄  ▄▄▄ ▄▄▄▄▄▄ ▄▄▄▄▄▄ ▄▄    ▄▄▄▄▄  ▄▄▄▄ ▄▄ ▄▄ ▄▄ ▄▄▄▄
@@ -339,5 +346,20 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     @Override
     public ScreenType newGameCpu() {
         return null;
+    }
+
+    @Override
+    public void quit() {
+        clearScreen(false);
+        terminal.writer()
+                .println(
+                        """
+                                                               ▄▄
+             ▄████  ▄████▄ ▄████▄ ████▄  █████▄ ██  ██ ██████  ██
+            ██  ▄▄▄ ██  ██ ██  ██ ██  ██ ██▄▄██  ▀██▀  ██▄▄    ██
+             ▀███▀  ▀████▀ ▀████▀ ████▀  ██▄▄█▀   ██   ██▄▄▄▄  ▄▄
+
+            """);
+        terminal.flush();
     }
 }
