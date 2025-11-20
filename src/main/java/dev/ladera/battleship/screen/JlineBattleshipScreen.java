@@ -146,12 +146,12 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         var builder = prompt.getPromptBuilder();
         builder.createInputPrompt()
                 .name("username")
-                .message("Username:")
+                .message("Username")
                 .defaultValue("")
                 .addPrompt();
         builder.createInputPrompt()
                 .name("passphrase")
-                .message("Passphrase:")
+                .message("Passphrase")
                 .mask('*')
                 .defaultValue("")
                 .addPrompt();
@@ -243,7 +243,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         var builder = prompt.getPromptBuilder()
                 .createInputPrompt()
                 .name("username")
-                .message("Username:")
+                .message("Username")
+                .defaultValue("")
                 .addPrompt();
 
         while (!done) {
@@ -282,11 +283,13 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                     .name("passphrase")
                     .message("Passphrase:")
                     .mask('*')
+                    .defaultValue("")
                     .addPrompt()
                     .createInputPrompt()
                     .name("re-passphrase")
                     .message("Re-enter your passphrase:")
                     .mask('*')
+                    .defaultValue("")
                     .addPrompt();
 
             var res = prompt.prompt(builder.build());
