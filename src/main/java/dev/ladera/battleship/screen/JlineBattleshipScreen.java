@@ -10,6 +10,7 @@ import dev.ladera.battleship.service.IGameService;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
@@ -70,6 +71,12 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         while (currentScreen != null) {
             currentScreen = processScreen(currentScreen);
         }
+
+        try {
+            terminal.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -127,30 +134,41 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     @Override
     public ScreenType signIn() {
         clearScreen(false);
+
         var builder = prompt.getPromptBuilder();
-
         builder.createInputPrompt().name("username").message("Username:").addPrompt();
-
         builder.createInputPrompt()
                 .name("passphrase")
                 .message("Passphrase:")
                 .mask('*')
                 .addPrompt();
 
-        try {
-            var res = prompt.prompt(builder.build());
-            // prompt.prompt(List.of()); // TODO is this necessary?
-            String username = res.get("username").getResult();
-            String passphrase = res.get("passphrase").getResult();
+        while (true) {
+            try {
+                placeCursor(1, 0);
+                var res = prompt.prompt(builder.build());
+                resetPrompt();
 
-            // TODO check if able to log in
-            terminal.writer().println("| " + username + " | " + passphrase);
-            terminal.flush();
-        } catch (IOException e) {
-            LOGGER.error("sign in", e);
+                String username = res.get("username").getResult();
+                String passphrase = res.get("passphrase").getResult();
+
+                player = gameService.findPlayerByUsername(username);
+
+                if (player == null || !Objects.equals(passphrase, player.getPassphrase())) {
+                    throw new RuntimeException("Invalid username or passphrase");
+                }
+
+                return ScreenType.MAIN_MENU;
+            } catch (IOException | SQLException e) {
+                LOGGER.error("sign in", e);
+                return null;
+            } catch (RuntimeException e) {
+                clearLines(0, 2);
+                placeCursor(0, 0);
+                var str = new AttributedString(e.getMessage(), ERROR_STYLE);
+                str.print(terminal);
+            }
         }
-
-        return null;
     }
 
     private void resetPrompt() throws IOException {
@@ -209,19 +227,17 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         String username = null;
 
         var cursor = terminal.getCursorPosition(null);
+        var builder = prompt.getPromptBuilder()
+                .createInputPrompt()
+                .name("username")
+                .message("Username:")
+                .addPrompt();
 
         while (!done) {
-            var builder = prompt.getPromptBuilder()
-                    .createInputPrompt()
-                    .name("username")
-                    .message("Username:")
-                    .addPrompt();
-
             var res = prompt.prompt(builder.build());
             username = res.get("username").getResult();
 
-            Player player = gameService.findPlayerByUsername(username);
-            done = player == null;
+            done = gameService.findPlayerByUsername(username) == null;
 
             if (!done) {
                 resetPrompt();
@@ -295,7 +311,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 String username = promptUsernameCreation();
                 String passphrase = promptPassphraseCreation();
 
-                player = gameService.createPlayer(new PlayerDto(username, passphrase, null));
+                this.player = gameService.createPlayer(new PlayerDto(username, passphrase, null));
 
                 return ScreenType.MAIN_MENU;
             } catch (IOException | SQLException e) {
