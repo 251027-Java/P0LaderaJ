@@ -5,6 +5,7 @@ import dev.ladera.battleship.dto.PlayerDto;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.service.IGameService;
 import org.jline.consoleui.prompt.ConsolePrompt;
+import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AttributedString;
@@ -94,7 +95,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         try {
             var res = prompt.prompt(builder.build());
-            prompt.prompt(List.of());
+            resetPrompt();
 
             String action = res.get("action").getResult();
 
@@ -147,12 +148,39 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         return null;
     }
 
+    private void resetPrompt() throws IOException {
+        prompt.prompt(List.of());
+    }
+
+    private void logCursor(String message) {
+        LOGGER.info("{}: {}", message, terminal.getCursorPosition(null));
+    }
+
+    private void placeNextPromptAt(Cursor cursor) throws IOException {
+        placeNextPromptAt(cursor.getY(),cursor.getX());
+    }
+
+    private void placeNextPromptAt(int row, int col) throws IOException {
+        terminal.puts(InfoCmp.Capability.cursor_address, row, col);
+        terminal.puts(InfoCmp.Capability.newline);
+        resetPrompt();
+    }
+
+    private void remakePromptAt(Cursor cursor) throws IOException {
+        remakePromptAt(cursor.getY(),cursor.getX());
+    }
+
+    private void remakePromptAt(int row, int col) throws IOException {
+        resetPrompt();
+        terminal.puts(InfoCmp.Capability.cursor_address,row,col);
+        terminal.puts(InfoCmp.Capability.clr_eol);
+    }
+
     private String promptUsernameCreation() throws IOException, SQLException {
         boolean done = false;
         String username = null;
 
         var cursor = terminal.getCursorPosition(null);
-        LOGGER.info("username cursor: {}", cursor);
 
         while (!done) {
             var builder = prompt.getPromptBuilder()
@@ -162,8 +190,6 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                     .addPrompt();
 
             var res = prompt.prompt(builder.build());
-            prompt.prompt(List.of());
-            LOGGER.info("cursor after re-prompting: {}", terminal.getCursorPosition(null));
             username = res.get("username").getResult();
 
             Player player = gameService.findPlayerByUsername(username);
@@ -171,17 +197,18 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             done = player == null;
 
             if (!done) {
-                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 2, cursor.getX());
-                terminal.flush();
+                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 1, cursor.getX());
+                var str = new AttributedString(
+                        "Try again."
+                            + " oidsjfgiosdjfgoijsdfoghijsfdoighjoifgjhoisdjfgh08sgshjsogihjoisfgjhoisjgohijfdoghjfoghi",
+                        AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+                str.print(terminal);
 
-                var str = new AttributedString("Try again.", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
-                str.println(terminal);
-                terminal.flush();
-
-                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY(), cursor.getX());
-                terminal.flush();
+                remakePromptAt(cursor.getY(), cursor.getX());
             }
         }
+
+        placeNextPromptAt(cursor.getY() + 1, cursor.getX());
 
         return username;
     }
@@ -206,7 +233,6 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                     .addPrompt();
 
             var res = prompt.prompt(builder.build());
-            prompt.prompt(List.of());
 
             p1 = res.get("passphrase").getResult();
             String p2 = res.get("re-passphrase").getResult();
@@ -214,17 +240,16 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             done = p1.equals(p2);
 
             if (!done) {
-                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 3, cursor.getX());
-
+                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY() + 2, cursor.getX());
                 var str = new AttributedString(
                         "Passphrases did not match.", AttributedStyle.DEFAULT.foreground(AttributedStyle.RED));
+                str.print(terminal);
 
-                str.println(terminal);
-
-                terminal.puts(InfoCmp.Capability.cursor_address, cursor.getY(), cursor.getX());
-                terminal.flush();
+                remakePromptAt(cursor.getY(),cursor.getX());
             }
         }
+
+        placeNextPromptAt(cursor.getY()+2,cursor.getX());
 
         return p1;
     }
