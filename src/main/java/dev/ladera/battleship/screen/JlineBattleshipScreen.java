@@ -54,6 +54,15 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             case ScreenType.MAIN_MENU -> {
                 return mainMenu();
             }
+            case ScreenType.PLAY -> {
+                return play();
+            }
+            // case ScreenType.GAME_SELECTION -> {
+            //     return gameSelection();
+            // }
+            // case ScreenType.NEW_GAME_INIT -> {
+            //     return newGameInit();
+            // }
             default -> {
                 return null;
             }
@@ -392,9 +401,60 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     }
 
     @Override
+    public ScreenType play() {
+        clearScreen(false);
+        displaySignedInContent();
+
+        var builder = prompt.getPromptBuilder()
+                .createListPrompt()
+                .name("action")
+                .message("Options")
+                .newItem(StringConstants.NEW_GAME.value)
+                .add()
+                .newItem(StringConstants.CONTINUE_GAME.value)
+                .add()
+                .newItem(StringConstants.BACK.value)
+                .add()
+                .addPrompt();
+
+        var cursor = terminal.getCursorPosition(null);
+        placeCursor(cursor.getY() + 1, cursor.getX());
+
+        try {
+            var res = prompt.prompt(builder.build());
+            resetPrompt();
+
+            String action = res.get("action").getResult();
+
+            switch (StringConstants.fromValue(action)) {
+                case StringConstants.NEW_GAME -> {
+                    return ScreenType.NEW_GAME_INIT;
+                }
+                case StringConstants.CONTINUE_GAME -> {
+                    return ScreenType.GAME_SELECTION;
+                }
+                case StringConstants.BACK -> {
+                    return ScreenType.MAIN_MENU;
+                }
+                case null, default -> {}
+            }
+
+        } catch (IOException e) {
+            LOGGER.error("play", e);
+        }
+
+        return null;
+    }
+
+    @Override
+    public ScreenType gameSelection() {
+        return null;
+    }
+
+    @Override
     public void quit() {
         clearScreen(false);
-        terminal.writer().println(StringConstants.GOODBYE.value);
+        terminal.writer().print(StringConstants.GOODBYE.value);
         terminal.flush();
     }
 }

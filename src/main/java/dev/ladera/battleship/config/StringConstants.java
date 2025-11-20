@@ -13,6 +13,9 @@ public enum StringConstants {
     SIGN_OUT("Sign out"),
     STATS("Stats"),
     HISTORY("History"),
+    BACK("Back"),
+    NEW_GAME("New game"),
+    CONTINUE_GAME("Continue game"),
     BATTLESHIP(
             """
 
