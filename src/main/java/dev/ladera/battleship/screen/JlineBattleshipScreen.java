@@ -1,10 +1,5 @@
 package dev.ladera.battleship.screen;
 
-/*
-ascii art text
-https://patorjk.com/software/taag
- */
-
 import dev.ladera.battleship.config.StringConstants;
 import dev.ladera.battleship.dto.PlayerDto;
 import dev.ladera.battleship.exception.InvalidPassphraseException;
@@ -21,6 +16,7 @@ import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
 import org.jline.utils.AttributedString;
+import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
@@ -54,6 +50,9 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             }
             case ScreenType.CREATE_ACCOUNT -> {
                 return createAccount();
+            }
+            case ScreenType.MAIN_MENU -> {
+                return mainMenu();
             }
             default -> {
                 return null;
@@ -90,15 +89,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     public ScreenType startUp() {
         clearScreen(false);
 
-        terminal.writer()
-                .print(
-                        """
-
-            █████▄  ▄▄▄ ▄▄▄▄▄▄ ▄▄▄▄▄▄ ▄▄    ▄▄▄▄▄  ▄▄▄▄ ▄▄ ▄▄ ▄▄ ▄▄▄▄
-            ██▄▄██ ██▀██  ██     ██   ██    ██▄▄  ███▄▄ ██▄██ ██ ██▄█▀
-            ██▄▄█▀ ██▀██  ██     ██   ██▄▄▄ ██▄▄▄ ▄▄██▀ ██ ██ ██ ██
-
-            """);
+        terminal.writer().print(StringConstants.BATTLESHIP.value);
 
         var builder = prompt.getPromptBuilder()
                 .createListPrompt()
@@ -128,7 +119,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 case StringConstants.QUIT -> {
                     return ScreenType.QUIT;
                 }
-                case null -> {}
+                case null, default -> {}
             }
 
         } catch (IOException e) {
@@ -333,8 +324,60 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         }
     }
 
+    private void displaySignedInContent() {
+        placeCursor(1, 0);
+        var str = new AttributedStringBuilder()
+                .style(AttributedStyle.DEFAULT.background(AttributedStyle.BLUE))
+                .append(" ")
+                .append(player.getUsername())
+                .append(" ");
+        str.println(terminal);
+    }
+
     @Override
     public ScreenType mainMenu() {
+        clearScreen(false);
+        displaySignedInContent();
+
+        var builder = prompt.getPromptBuilder()
+                .createListPrompt()
+                .name("action")
+                .message("Main Menu")
+                .newItem(StringConstants.PLAY.value)
+                .add()
+                .newItem(StringConstants.SIGN_OUT.value)
+                .add()
+                .newItem(StringConstants.QUIT.value)
+                .add()
+                .addPrompt();
+
+        var cursor = terminal.getCursorPosition(null);
+        placeCursor(cursor.getY() + 1, cursor.getX());
+
+        try {
+            var res = prompt.prompt(builder.build());
+            resetPrompt();
+
+            String action = res.get("action").getResult();
+
+            switch (StringConstants.fromValue(action)) {
+                case StringConstants.PLAY -> {
+                    return ScreenType.PLAY;
+                }
+                case StringConstants.SIGN_OUT -> {
+                    player = null;
+                    return ScreenType.STARTUP;
+                }
+                case StringConstants.QUIT -> {
+                    return ScreenType.QUIT;
+                }
+                case null, default -> {}
+            }
+
+        } catch (IOException e) {
+            LOGGER.error("main menu", e);
+        }
+
         return null;
     }
 
@@ -351,15 +394,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     @Override
     public void quit() {
         clearScreen(false);
-        terminal.writer()
-                .println(
-                        """
-                                                               ▄▄
-             ▄████  ▄████▄ ▄████▄ ████▄  █████▄ ██  ██ ██████  ██
-            ██  ▄▄▄ ██  ██ ██  ██ ██  ██ ██▄▄██  ▀██▀  ██▄▄    ██
-             ▀███▀  ▀████▀ ▀████▀ ████▀  ██▄▄█▀   ██   ██▄▄▄▄  ▄▄
-
-            """);
+        terminal.writer().println(StringConstants.GOODBYE.value);
         terminal.flush();
     }
 }

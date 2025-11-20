@@ -7,5 +7,6 @@ public enum ScreenType {
     QUIT,
     MAIN_MENU,
     NEW_GAME_INIT,
-    NEW_GAME_CPU
+    NEW_GAME_CPU,
+    PLAY
 }
