@@ -1,10 +1,37 @@
 package dev.ladera.battleship.config;
 
+/*
+ascii art text
+https://patorjk.com/software/taag
+ */
+
 public enum StringConstants {
     SIGN_IN("Sign in"),
     CREATE_ACCOUNT("Create account"),
     QUIT("Quit"),
-    ;
+    PLAY("Play"),
+    SIGN_OUT("Sign out"),
+    STATS("Stats"),
+    HISTORY("History"),
+    BACK("Back"),
+    NEW_GAME("New game"),
+    CONTINUE_GAME("Continue game"),
+    BATTLESHIP(
+            """
+
+        █████▄  ▄▄▄ ▄▄▄▄▄▄ ▄▄▄▄▄▄ ▄▄    ▄▄▄▄▄  ▄▄▄▄ ▄▄ ▄▄ ▄▄ ▄▄▄▄
+        ██▄▄██ ██▀██  ██     ██   ██    ██▄▄  ███▄▄ ██▄██ ██ ██▄█▀
+        ██▄▄█▀ ██▀██  ██     ██   ██▄▄▄ ██▄▄▄ ▄▄██▀ ██ ██ ██ ██
+
+        """),
+    GOODBYE(
+            """
+                                                           ▄▄
+         ▄████  ▄████▄ ▄████▄ ████▄  █████▄ ██  ██ ██████  ██
+        ██  ▄▄▄ ██  ██ ██  ██ ██  ██ ██▄▄██  ▀██▀  ██▄▄    ██
+         ▀███▀  ▀████▀ ▀████▀ ████▀  ██▄▄█▀   ██   ██▄▄▄▄  ▄▄
+
+        """);
 
     public final String value;
 
