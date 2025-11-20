@@ -4,6 +4,7 @@ import dev.ladera.battleship.dto.GameDto;
 import dev.ladera.battleship.dto.MoveDto;
 import dev.ladera.battleship.dto.PlayerDto;
 import dev.ladera.battleship.dto.ShipDto;
+import dev.ladera.battleship.exception.*;
 import dev.ladera.battleship.model.Game;
 import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Player;
@@ -14,6 +15,7 @@ import dev.ladera.battleship.repository.IPlayerRepository;
 import dev.ladera.battleship.repository.IShipRepository;
 import java.sql.SQLException;
 import java.util.List;
+import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,11 +38,18 @@ public class GameService implements IGameService {
         this.shipRepository = shipRepository;
     }
 
+    private boolean isValidUsername(String username) {
+        return username.matches("[a-zA-Z0-9]{3,30}");
+    }
+
     @Override
     public Player createPlayer(PlayerDto dto) throws SQLException {
+        if (!isValidUsername(dto.username())) {
+            throw new InvalidUsernameException("Username must only contain 3-30 alphanumeric characters");
+        }
+
         if (playerRepository.findByUsername(dto.username()) != null) {
-            LOGGER.info("Tried creating player with existing username: {}", dto.username());
-            return null;
+            throw new UsernameExistsException("Username already exists");
         }
 
         return playerRepository.save(new Player(dto.username(), dto.passphrase(), dto.originPlayerId()));
@@ -57,8 +66,7 @@ public class GameService implements IGameService {
 
         if (!game.isValidLocation(dto.rowStart(), dto.colStart())
                 || !game.isValidLocation(dto.rowEnd(), dto.colEnd())) {
-            LOGGER.info("Tried creating ship out of bounds of game: {} {}", dto, game);
-            return null;
+            throw new InvalidLocationException("Ship location is out of bounds");
         }
 
         return shipRepository.save(
@@ -70,10 +78,18 @@ public class GameService implements IGameService {
             return turn == 1;
         }
 
-        // weird situation
+        // TODO weird situation
         if (latestMove.getTurn() == null) return false;
 
         return latestMove.getTurn() + 1 == turn;
+    }
+
+    private boolean isValidPlayer(Move latestMove, Long playerId) {
+        if (latestMove == null) {
+            return true;
+        }
+
+        return Objects.equals(latestMove.getPlayerId(), playerId);
     }
 
     @Override
@@ -81,15 +97,17 @@ public class GameService implements IGameService {
         Game game = gameRepository.findById(dto.gameId());
 
         if (!game.isValidLocation(dto.row(), dto.col())) {
-            LOGGER.info("Tried creating move out of bounds of game: {} {}", dto, game);
-            return null;
+            throw new InvalidLocationException("Move location is out of bounds");
         }
 
         Move latestMove = moveRepository.findLatestMove(dto.gameId());
 
         if (!isValidTurn(latestMove, dto.turn())) {
-            LOGGER.info("Tried creating move turn out of order: {} {}", dto, latestMove);
-            return null;
+            throw new InvalidMoveTurnException("Move's turn is out of order");
+        }
+
+        if (!isValidPlayer(latestMove, dto.playerId())) {
+            throw new InvalidMovePlayerException("Player is moving out of order");
         }
 
         return moveRepository.save(new Move(dto.turn(), dto.row(), dto.col(), dto.playerId(), dto.gameId()));
