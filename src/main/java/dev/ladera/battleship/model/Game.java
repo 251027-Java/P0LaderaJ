@@ -1,9 +1,6 @@
 package dev.ladera.battleship.model;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class Game {
     private Long id;
@@ -25,6 +22,10 @@ public class Game {
         this.id = id;
         this.rows = rows;
         this.cols = cols;
+        moves = new ArrayList<>();
+        ships = new ArrayList<>();
+        shipHealth = new HashMap<>();
+        shipsRemaining = new HashMap<>();
     }
 
     private void processMove(Ship ship, Move move) {

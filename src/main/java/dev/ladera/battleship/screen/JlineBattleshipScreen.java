@@ -1,11 +1,14 @@
 package dev.ladera.battleship.screen;
 
 import dev.ladera.battleship.config.StringConstants;
+import dev.ladera.battleship.dto.GameDto;
 import dev.ladera.battleship.dto.PlayerDto;
 import dev.ladera.battleship.exception.InvalidPassphraseException;
 import dev.ladera.battleship.exception.InvalidUsernameException;
 import dev.ladera.battleship.exception.UsernameExistsException;
+import dev.ladera.battleship.model.Game;
 import dev.ladera.battleship.model.Player;
+import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.service.IGameService;
 import java.io.IOException;
 import java.sql.SQLException;
@@ -30,6 +33,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     private ScreenType currentScreen;
 
     private Player player;
+    private Game currentGame;
 
     public JlineBattleshipScreen(IGameService gameService) throws IOException {
         this.gameService = gameService;
@@ -55,12 +59,15 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             case ScreenType.PLAY -> {
                 return play();
             }
+            case ScreenType.GAMEPLAY -> {
+                return gamePlay();
+            }
             // case ScreenType.GAME_SELECTION -> {
             //     return gameSelection();
             // }
-            // case ScreenType.NEW_GAME_INIT -> {
-            //     return newGameInit();
-            // }
+            case ScreenType.NEW_GAME_INIT -> {
+                return newGameInit();
+            }
             default -> {
                 return null;
             }
@@ -396,8 +403,61 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         return null;
     }
 
+    private int translateRow(String cell) {
+        char c = Character.toLowerCase(cell.charAt(0));
+        return c - 'a';
+    }
+
+    private int translateCol(String cell) {
+        return Integer.parseInt(cell.substring(1));
+    }
+
+    private Ship promptShipPlacement(int length) throws IOException {
+        var builder = prompt.getPromptBuilder();
+        builder.createInputPrompt()
+                .name("location")
+                .message("Choose a location for the ship")
+                .defaultValue("")
+                .addPrompt();
+        builder.createInputPrompt()
+                .name("direction")
+                .message("Choose the direction of the ship")
+                .defaultValue("")
+                .addPrompt();
+
+        while (true) {
+            var res = prompt.prompt(builder.build());
+
+            String location = res.get("location").getResult();
+            String direction = res.get("direction").getResult();
+
+            // gameService.createShip(new ShipDto());
+            return null;
+        }
+
+        // return null;
+    }
+
     @Override
     public ScreenType newGameInit() {
+        clearScreen(false);
+        displaySignedInContent();
+
+        try {
+            currentGame = gameService.createGame(new GameDto(10, 10));
+
+            // TODO show grid
+            // ASK FOR SHIPS
+            List<Integer> shipLengths = List.of(5, 4, 3, 3, 2);
+            for (int length : shipLengths) {
+                currentGame.addShip(promptShipPlacement(length));
+            }
+
+            return ScreenType.GAMEPLAY;
+        } catch (SQLException | IOException e) {
+            LOGGER.info("new game init", e);
+        }
+
         return null;
     }
 
@@ -454,6 +514,11 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
     @Override
     public ScreenType gameSelection() {
+        return null;
+    }
+
+    @Override
+    public ScreenType gamePlay() {
         return null;
     }
 

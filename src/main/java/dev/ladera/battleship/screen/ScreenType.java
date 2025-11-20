@@ -9,5 +9,6 @@ public enum ScreenType {
     NEW_GAME_INIT,
     NEW_GAME_CPU,
     PLAY,
-    GAME_SELECTION
+    GAME_SELECTION,
+    GAMEPLAY,
 }
