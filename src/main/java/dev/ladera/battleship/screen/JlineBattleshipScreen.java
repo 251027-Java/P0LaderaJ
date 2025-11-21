@@ -11,13 +11,6 @@ import dev.ladera.battleship.model.Game;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.service.IGameService;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
@@ -29,6 +22,14 @@ import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
 public class JlineBattleshipScreen implements IBattleshipScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(JlineBattleshipScreen.class);
 
@@ -39,6 +40,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     private Random random;
 
     private Player player;
+    private Player cpuPlayer;
     private Game currentGame;
 
     public JlineBattleshipScreen(IGameService gameService) throws IOException {
@@ -450,6 +452,9 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         placeCursor(row + currentGame.getRows(), col + 1);
         terminal.writer().print("0123456789");
 
+        placeCursor(row + currentGame.getRows() + 2, col + 1);
+        var who = new AttributedString("YOU", AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW));
+        who.print(terminal);
         // show your board
         for (Ship e : currentGame.getShips()) {
             if (Objects.equals(e.getPlayerId(), playerId)) {
@@ -547,6 +552,36 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     20 input
      */
 
+    private void createCpuBoard() throws SQLException {
+        List<Integer> shipLengths = List.of(5, 4, 3, 3, 2);
+        String[] directions = {"North", "East", "South", "West"};
+
+        for (int length : shipLengths) {
+            boolean done = false;
+
+            while (!done) {
+                int r = random.nextInt(currentGame.getRows());
+                int c = random.nextInt(currentGame.getCols());
+                String d = directions[random.nextInt(directions.length)];
+
+                int[] end = applyDirection(r, c, length, d);
+
+                if (!currentGame.isValidLocation(end[0], end[1])
+                        || currentGame.isSpaceOccupied(cpuPlayer.getId(), r, c, end[0], end[1])) {
+                    continue;
+                }
+
+                Ship ship = gameService.createShip(
+                        new ShipDto(r, end[0], c, end[1], cpuPlayer.getId(), currentGame.getId()));
+                currentGame.addShip(ship);
+
+                LOGGER.debug("cpu ship ({}) {}", length, ship);
+
+                done = true;
+            }
+        }
+    }
+
     @Override
     public ScreenType newGameInit() {
         clearScreen(false);
@@ -554,6 +589,12 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         try {
             currentGame = gameService.createGame(new GameDto(10, 10));
+
+            cpuPlayer = gameService.findCpuByUsernameAndOrigin("CPU", player.getId());
+            if (cpuPlayer == null) {
+                cpuPlayer = gameService.createCpuPlayer(new PlayerDto("CPU", null, player.getId()));
+            }
+            createCpuBoard();
 
             List<Integer> shipLengths = List.of(5, 4, 3, 3, 2);
             for (int i = 0; i < shipLengths.size(); i++) {
@@ -644,8 +685,6 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     public ScreenType gamePlay() {
         clearScreen(false);
         displaySignedInContent();
-
-        // TODO generate random board for AI
 
         displayGameBoard(5, 10, player.getId());
 
