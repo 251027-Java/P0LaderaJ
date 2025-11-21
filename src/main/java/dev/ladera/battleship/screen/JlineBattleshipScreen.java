@@ -1,20 +1,27 @@
 package dev.ladera.battleship.screen;
 
 import dev.ladera.battleship.config.StringConstants;
+import dev.ladera.battleship.dto.GameDto;
 import dev.ladera.battleship.dto.PlayerDto;
+import dev.ladera.battleship.dto.ShipDto;
 import dev.ladera.battleship.exception.InvalidPassphraseException;
 import dev.ladera.battleship.exception.InvalidUsernameException;
 import dev.ladera.battleship.exception.UsernameExistsException;
+import dev.ladera.battleship.model.Game;
 import dev.ladera.battleship.model.Player;
+import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.service.IGameService;
 import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
+import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
@@ -30,6 +37,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     private ScreenType currentScreen;
 
     private Player player;
+    private Game currentGame;
 
     public JlineBattleshipScreen(IGameService gameService) throws IOException {
         this.gameService = gameService;
@@ -55,12 +63,15 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             case ScreenType.PLAY -> {
                 return play();
             }
+            case ScreenType.GAMEPLAY -> {
+                return gamePlay();
+            }
             // case ScreenType.GAME_SELECTION -> {
             //     return gameSelection();
             // }
-            // case ScreenType.NEW_GAME_INIT -> {
-            //     return newGameInit();
-            // }
+            case ScreenType.NEW_GAME_INIT -> {
+                return newGameInit();
+            }
             default -> {
                 return null;
             }
@@ -155,12 +166,12 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         while (true) {
             try {
-                placeCursor(1, 0);
+                placeCursor(3, 0);
                 var res = prompt.prompt(builder.build());
                 resetPrompt();
 
-                String username = res.get("username").getResult();
-                String passphrase = res.get("passphrase").getResult();
+                String username = res.get("username").getResult().trim();
+                String passphrase = res.get("passphrase").getResult().trim();
 
                 player = gameService.findPlayerByUsername(username);
 
@@ -173,8 +184,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 LOGGER.error("sign in", e);
                 return null;
             } catch (RuntimeException e) {
-                clearLines(0, 2);
-                displayError(0, 0, e.getMessage());
+                clearLines(1, 4);
+                displayError(1, 0, e.getMessage());
             }
         }
     }
@@ -258,30 +269,27 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         while (!done) {
             var res = prompt.prompt(builder.build());
-            username = res.get("username").getResult();
+            username = res.get("username").getResult().trim();
 
             done = gameService.findPlayerByUsername(username) == null;
 
             if (!done) {
                 resetPrompt();
-                displayError(0, 0, "Username already exists");
+                displayError(1, 0, "Username already exists");
                 placeCursor(cursor);
             }
         }
 
-        clearLine(0);
+        clearLine(1);
         placeNextPromptAt(cursor.getY() + 1, cursor.getX());
 
         return username;
     }
 
     private String promptPassphraseCreation() throws IOException {
-        boolean done = false;
-        String p1 = null;
-
         var cursor = terminal.getCursorPosition(null);
 
-        while (!done) {
+        while (true) {
             var builder = prompt.getPromptBuilder()
                     .createInputPrompt()
                     .name("passphrase")
@@ -298,22 +306,21 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             var res = prompt.prompt(builder.build());
 
-            p1 = res.get("passphrase").getResult();
-            String p2 = res.get("re-passphrase").getResult();
+            String p1 = res.get("passphrase").getResult().trim();
+            String p2 = res.get("re-passphrase").getResult().trim();
 
-            done = p1.equals(p2);
-
-            if (!done) {
+            if (!p1.equals(p2)) {
                 resetPrompt();
-                displayError(0, 0, "Passphrases did not match");
+                displayError(1, 0, "Passphrases did not match");
                 placeCursor(cursor);
+                continue;
             }
+
+            clearLine(1);
+            placeNextPromptAt(cursor.getY() + 2, cursor.getX());
+
+            return p1;
         }
-
-        clearLine(0);
-        placeNextPromptAt(cursor.getY() + 2, cursor.getX());
-
-        return p1;
     }
 
     @Override
@@ -322,7 +329,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         while (true) {
             try {
-                placeCursor(1, 0);
+                placeCursor(3, 0);
                 String username = promptUsernameCreation();
                 String passphrase = promptPassphraseCreation();
 
@@ -333,8 +340,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 LOGGER.error("create account", e);
                 return null;
             } catch (InvalidUsernameException | UsernameExistsException | InvalidPassphraseException e) {
-                clearLines(0, 2);
-                displayError(0, 0, e.getMessage());
+                clearLines(1, 5);
+                displayError(1, 0, e.getMessage());
             }
         }
     }
@@ -396,8 +403,181 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         return null;
     }
 
+    private int[] translateLocation(String location) {
+        int r = Character.toLowerCase(location.charAt(0)) - 'a';
+        int c = location.charAt(1) - '0';
+        // TODO goes wrong if grid is not 10x10
+        return new int[] {9 - r, c};
+    }
+
+    private boolean isValidLocation(String location) {
+        return location.matches("^(?i)[a-j][0-9]$");
+    }
+
+    private int[] applyDirection(int row, int col, int length, String direction) {
+        int rowMul =
+                switch (direction) {
+                    case "North" -> -1;
+                    case "South" -> 1;
+                    default -> 0;
+                };
+
+        int colMul =
+                switch (direction) {
+                    case "East" -> 1;
+                    case "West" -> -1;
+                    default -> 0;
+                };
+
+        return new int[] {row + (length - 1) * rowMul, col + (length - 1) * colMul};
+    }
+
+    private void displayGameBoard(int row, int col, Long playerId) {
+        var originalCursor = terminal.getCursorPosition(null);
+        placeCursor(row, col);
+
+        // general board
+        for (int r = row; r < row + currentGame.getRows(); r++) {
+            placeCursor(r, col);
+            char c = (char) (9 - (r - row) + 'A');
+            terminal.writer().print(c);
+            terminal.writer().print(".".repeat(currentGame.getCols()));
+        }
+
+        placeCursor(row + currentGame.getRows(), col + 1);
+        terminal.writer().print("0123456789");
+
+        // show your board
+        for (Ship e : currentGame.getShips()) {
+            if (Objects.equals(e.getPlayerId(), playerId)) {
+                for (int r = e.minRow(); r <= e.maxRow(); r++) {
+                    for (int c = e.minCol(); c <= e.maxCol(); c++) {
+                        placeCursor(r + row, c + col + 1);
+                        var str = new AttributedString("*", AttributedStyle.DEFAULT.background(AttributedStyle.GREEN));
+                        str.print(terminal);
+                    }
+                }
+            }
+        }
+
+        terminal.flush();
+
+        placeCursor(originalCursor);
+    }
+
+    private Ship promptShipPlacement(int shipNum, int length) throws IOException, SQLException {
+        var builder = prompt.getPromptBuilder();
+        builder.createInputPrompt()
+                .name("location")
+                .message(String.format("Choose a location for Ship #%d (%dx1)", shipNum, length))
+                .defaultValue("")
+                .addPrompt();
+        builder.createListPrompt()
+                .name("direction")
+                .message("Choose the direction of the ship")
+                .newItem("North")
+                .add()
+                .newItem("East")
+                .add()
+                .newItem("South")
+                .add()
+                .newItem("West")
+                .add()
+                .addPrompt();
+
+        var cursor = terminal.getCursorPosition(null);
+
+        Function<String, Void> onError = msg -> {
+            try {
+                resetPrompt();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            displayError(3, 0, msg);
+            placeCursor(cursor);
+
+            return null;
+        };
+
+        while (true) {
+            var res = prompt.prompt(builder.build());
+
+            String location = res.get("location").getResult().trim();
+            String direction = res.get("direction").getResult();
+
+            if (!isValidLocation(location)) {
+                onError.apply("Invalid location provided");
+                continue;
+            }
+
+            int[] start = translateLocation(location);
+            int[] end = applyDirection(start[0], start[1], length, direction);
+
+            if (!currentGame.isValidLocation(start[0], start[1]) || !currentGame.isValidLocation(end[0], end[1])) {
+                onError.apply("Invalid location: out of bounds");
+                continue;
+            }
+
+            if (currentGame.isSpaceOccupied(player.getId(), start[0], start[1], end[0], end[1])) {
+                onError.apply("Invalid location: overlaps with other ship");
+                continue;
+            }
+
+            clearLine(3);
+            resetPrompt();
+
+            return gameService.createShip(
+                    new ShipDto(start[0], end[0], start[1], end[1], player.getId(), currentGame.getId()));
+        }
+    }
+
+    /*
+    general format for game
+    0
+    1 signed in line
+    2
+    3 error
+    4
+    5 board
+    .
+    20 input
+     */
+
     @Override
     public ScreenType newGameInit() {
+        clearScreen(false);
+        displaySignedInContent();
+
+        try {
+            currentGame = gameService.createGame(new GameDto(10, 10));
+
+            List<Integer> shipLengths = List.of(5, 4, 3, 3, 2);
+            for (int i = 0; i < shipLengths.size(); i++) {
+                displayGameBoard(5, 10, player.getId());
+                placeCursor(20, 0);
+                currentGame.addShip(promptShipPlacement(i + 1, shipLengths.get(i)));
+            }
+
+            displayGameBoard(5, 10, player.getId());
+
+            int seconds = 3;
+            for (int i = seconds; i >= 0; i--) {
+                placeCursor(3, 0);
+
+                var str = new AttributedString(
+                        String.format("Starting in %d second(s)", i),
+                        AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW));
+                str.print(terminal);
+
+                TimeUnit.SECONDS.sleep(1);
+            }
+
+            return ScreenType.GAMEPLAY;
+        } catch (SQLException | IOException | InterruptedException e) {
+            LOGGER.info("new game init", e);
+        }
+
         return null;
     }
 
@@ -454,6 +634,11 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
     @Override
     public ScreenType gameSelection() {
+        return null;
+    }
+
+    @Override
+    public ScreenType gamePlay() {
         return null;
     }
 

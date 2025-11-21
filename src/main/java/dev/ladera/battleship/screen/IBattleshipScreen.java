@@ -19,5 +19,7 @@ public interface IBattleshipScreen {
 
     ScreenType gameSelection();
 
+    ScreenType gamePlay();
+
     void quit();
 }
