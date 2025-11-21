@@ -10,10 +10,13 @@ import dev.ladera.battleship.screen.IBattleshipScreen;
 import dev.ladera.battleship.screen.JlineBattleshipScreen;
 import dev.ladera.battleship.service.GameService;
 import dev.ladera.battleship.service.IGameService;
-import java.io.IOException;
-import java.sql.SQLException;
+import org.jline.utils.AttributedStringBuilder;
+import org.jline.utils.AttributedStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);
@@ -22,6 +25,13 @@ public class Main {
         LOGGER.info("Application started");
 
         try (Config config = new Config()) {
+            if (config.getConnection() == null) {
+                var str = new AttributedStringBuilder().style(AttributedStyle.DEFAULT.background(AttributedStyle.RED)).append(" ERROR ")
+                                .style(AttributedStyle.DEFAULT.foreground(AttributedStyle.RED)).append(" Cannot connect to database");
+                System.out.println(str.toAnsi());
+                System.exit(-1);
+            }
+
             IShipRepository shipRepository = new JdbcShipRepository(config.getConnection());
             IMoveRepository moveRepository = new JdbcMoveRepository(config.getConnection());
             IPlayerRepository playerRepository = new JdbcPlayerRepository(config.getConnection());
