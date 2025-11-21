@@ -42,13 +42,33 @@ public class JdbcPlayerRepository implements IPlayerRepository {
     }
 
     @Override
-    public Player findByUsername(String username) throws SQLException {
+    public Player findRealByUsername(String username) throws SQLException {
         try (var st = connection.prepareStatement(
                 """
             SELECT id, username, passphrase, origin_player_id FROM player
-            WHERE username ILIKE ?
+            WHERE username ILIKE ? AND origin_player_id IS NULL
             """)) {
             st.setString(1, username);
+
+            var rs = st.executeQuery();
+
+            if (rs.next()) {
+                return toPlayer(rs);
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public Player findCpuByUsernameAndOrigin(String username, long originPlayerId) throws SQLException {
+        try (var st = connection.prepareStatement(
+                """
+            SELECT id, username, passphrase, origin_player_id FROM player
+            WHERE username ILIKE ? AND origin_player_id = ?
+            """)) {
+            st.setString(1, username);
+            st.setLong(2, originPlayerId);
 
             var rs = st.executeQuery();
 

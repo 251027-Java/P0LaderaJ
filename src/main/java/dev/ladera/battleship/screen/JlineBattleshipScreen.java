@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
@@ -35,6 +36,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     private Terminal terminal;
     private ConsolePrompt prompt;
     private ScreenType currentScreen;
+    private Random random;
 
     private Player player;
     private Game currentGame;
@@ -43,6 +45,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         this.gameService = gameService;
         terminal = TerminalBuilder.builder().build();
         prompt = new ConsolePrompt(terminal);
+        random = new Random();
         currentScreen = ScreenType.STARTUP;
     }
 
@@ -639,6 +642,13 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
     @Override
     public ScreenType gamePlay() {
+        clearScreen(false);
+        displaySignedInContent();
+
+        // TODO generate random board for AI
+
+        displayGameBoard(5, 10, player.getId());
+
         return null;
     }
 
