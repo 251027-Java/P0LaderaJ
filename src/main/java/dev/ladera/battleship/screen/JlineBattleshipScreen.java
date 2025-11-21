@@ -20,6 +20,7 @@ import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
 import org.jline.terminal.TerminalBuilder;
+import org.jline.utils.AttributedString;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
@@ -432,10 +433,9 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
     private void displayGameBoard(int row, int col, Long playerId) {
         var originalCursor = terminal.getCursorPosition(null);
-
         placeCursor(row, col);
-        var cursor = terminal.getCursorPosition(null);
 
+        // general board
         for (int r = row; r < row + currentGame.getRows(); r++) {
             placeCursor(r, col);
             char c = (char) (9 - (r - row) + 'A');
@@ -445,6 +445,20 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         placeCursor(row + currentGame.getRows(), col + 1);
         terminal.writer().print("0123456789");
+
+        // show your board
+        for (Ship e : currentGame.getShips()) {
+            if (Objects.equals(e.getPlayerId(), playerId)) {
+                for (int r = e.minRow(); r <= e.maxRow(); r++) {
+                    for (int c = e.minCol(); c <= e.maxCol(); c++) {
+                        placeCursor(r + row, c + col + 1);
+                        var str = new AttributedString("*", AttributedStyle.DEFAULT.background(AttributedStyle.GREEN));
+                        str.print(terminal);
+                    }
+                }
+            }
+        }
+
         terminal.flush();
 
         placeCursor(originalCursor);
@@ -498,7 +512,6 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             int[] start = translateLocation(location);
             int[] end = applyDirection(start[0], start[1], length, direction);
-            LOGGER.debug("start {} {} end {} {}", start[0], start[1], end[0], end[1]);
 
             if (!currentGame.isValidLocation(start[0], start[1]) || !currentGame.isValidLocation(end[0], end[1])) {
                 onError.apply("Invalid location: out of bounds");

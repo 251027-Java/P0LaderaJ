@@ -31,12 +31,23 @@ public class Ship {
     }
 
     public boolean isValidLocation(int row, int col) {
-        int minRow = Math.min(rowStart, rowEnd);
-        int maxRow = Math.max(rowStart, rowEnd);
-        int minCol = Math.min(colStart, colEnd);
-        int maxCol = Math.max(colStart, colEnd);
+        return row >= minRow() && row <= maxRow() && col >= minCol() && col <= maxCol();
+    }
 
-        return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
+    public int minRow() {
+        return Math.min(rowStart, rowEnd);
+    }
+
+    public int maxRow() {
+        return Math.max(rowStart, rowEnd);
+    }
+
+    public int minCol() {
+        return Math.min(colStart, colEnd);
+    }
+
+    public int maxCol() {
+        return Math.max(colStart, colEnd);
     }
 
     public int area() {
