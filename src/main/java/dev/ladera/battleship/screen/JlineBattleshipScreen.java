@@ -3,6 +3,7 @@ package dev.ladera.battleship.screen;
 import dev.ladera.battleship.config.StringConstants;
 import dev.ladera.battleship.dto.GameDto;
 import dev.ladera.battleship.dto.PlayerDto;
+import dev.ladera.battleship.dto.ShipDto;
 import dev.ladera.battleship.exception.InvalidPassphraseException;
 import dev.ladera.battleship.exception.InvalidUsernameException;
 import dev.ladera.battleship.exception.UsernameExistsException;
@@ -14,6 +15,7 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
@@ -166,8 +168,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 var res = prompt.prompt(builder.build());
                 resetPrompt();
 
-                String username = res.get("username").getResult();
-                String passphrase = res.get("passphrase").getResult();
+                String username = res.get("username").getResult().trim();
+                String passphrase = res.get("passphrase").getResult().trim();
 
                 player = gameService.findPlayerByUsername(username);
 
@@ -265,7 +267,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         while (!done) {
             var res = prompt.prompt(builder.build());
-            username = res.get("username").getResult();
+            username = res.get("username").getResult().trim();
 
             done = gameService.findPlayerByUsername(username) == null;
 
@@ -283,12 +285,9 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     }
 
     private String promptPassphraseCreation() throws IOException {
-        boolean done = false;
-        String p1 = null;
-
         var cursor = terminal.getCursorPosition(null);
 
-        while (!done) {
+        while (true) {
             var builder = prompt.getPromptBuilder()
                     .createInputPrompt()
                     .name("passphrase")
@@ -305,22 +304,21 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             var res = prompt.prompt(builder.build());
 
-            p1 = res.get("passphrase").getResult();
-            String p2 = res.get("re-passphrase").getResult();
+            String p1 = res.get("passphrase").getResult().trim();
+            String p2 = res.get("re-passphrase").getResult().trim();
 
-            done = p1.equals(p2);
-
-            if (!done) {
+            if (!p1.equals(p2)) {
                 resetPrompt();
                 displayError(0, 0, "Passphrases did not match");
                 placeCursor(cursor);
+                continue;
             }
+
+            clearLine(0);
+            placeNextPromptAt(cursor.getY() + 2, cursor.getX());
+
+            return p1;
         }
-
-        clearLine(0);
-        placeNextPromptAt(cursor.getY() + 2, cursor.getX());
-
-        return p1;
     }
 
     @Override
@@ -403,40 +401,132 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         return null;
     }
 
-    private int translateRow(String cell) {
-        char c = Character.toLowerCase(cell.charAt(0));
-        return c - 'a';
+    private int[] translateLocation(String location) {
+        int r = Character.toLowerCase(location.charAt(0)) - 'a';
+        int c = location.charAt(1) - '0';
+        // TODO goes wrong if grid is not 10x10
+        return new int[] {9 - r, c};
     }
 
-    private int translateCol(String cell) {
-        return Integer.parseInt(cell.substring(1));
+    private boolean isValidLocation(String location) {
+        return location.matches("^(?i)[a-j][0-9]$");
     }
 
-    private Ship promptShipPlacement(int length) throws IOException {
+    private int[] applyDirection(int row, int col, int length, String direction) {
+        int rowMul =
+                switch (direction) {
+                    case "North" -> -1;
+                    case "South" -> 1;
+                    default -> 0;
+                };
+
+        int colMul =
+                switch (direction) {
+                    case "East" -> 1;
+                    case "West" -> -1;
+                    default -> 0;
+                };
+
+        return new int[] {row + (length - 1) * rowMul, col + (length - 1) * colMul};
+    }
+
+    private void displayGameBoard(int row, int col, Long playerId) {
+        var originalCursor = terminal.getCursorPosition(null);
+
+        placeCursor(row, col);
+        var cursor = terminal.getCursorPosition(null);
+
+        for (int r = row; r < row + currentGame.getRows(); r++) {
+            placeCursor(r, col);
+            char c = (char) (9 - (r - row) + 'A');
+            terminal.writer().print(c);
+            terminal.writer().print(".".repeat(currentGame.getCols()));
+        }
+
+        placeCursor(row + currentGame.getRows(), col + 1);
+        terminal.writer().print("0123456789");
+        terminal.flush();
+
+        placeCursor(originalCursor);
+    }
+
+    private Ship promptShipPlacement(int shipNum, int length) throws IOException, SQLException {
         var builder = prompt.getPromptBuilder();
         builder.createInputPrompt()
                 .name("location")
-                .message("Choose a location for the ship")
+                .message(String.format("Choose a location for Ship #%d (%dx1)", shipNum, length))
                 .defaultValue("")
                 .addPrompt();
-        builder.createInputPrompt()
+        builder.createListPrompt()
                 .name("direction")
                 .message("Choose the direction of the ship")
-                .defaultValue("")
+                .newItem("North")
+                .add()
+                .newItem("East")
+                .add()
+                .newItem("South")
+                .add()
+                .newItem("West")
+                .add()
                 .addPrompt();
+
+        var cursor = terminal.getCursorPosition(null);
+
+        Function<String, Void> onError = msg -> {
+            try {
+                resetPrompt();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            displayError(3, 0, msg);
+            placeCursor(cursor);
+
+            return null;
+        };
 
         while (true) {
             var res = prompt.prompt(builder.build());
 
-            String location = res.get("location").getResult();
+            String location = res.get("location").getResult().trim();
             String direction = res.get("direction").getResult();
 
-            // gameService.createShip(new ShipDto());
-            return null;
-        }
+            if (!isValidLocation(location)) {
+                onError.apply("Invalid location provided");
+                continue;
+            }
 
-        // return null;
+            int[] start = translateLocation(location);
+            int[] end = applyDirection(start[0], start[1], length, direction);
+            LOGGER.debug("start {} {} end {} {}", start[0], start[1], end[0], end[1]);
+
+            if (!currentGame.isValidLocation(start[0], start[1]) || !currentGame.isValidLocation(end[0], end[1])) {
+                onError.apply("Invalid location: out of bounds");
+                continue;
+            }
+
+            if (currentGame.isSpaceOccupied(player.getId(), start[0], start[1], end[0], end[1])) {
+                onError.apply("Invalid location: overlaps with other ship");
+                continue;
+            }
+
+            clearLine(3);
+            resetPrompt();
+
+            return gameService.createShip(
+                    new ShipDto(start[0], end[0], start[1], end[1], player.getId(), currentGame.getId()));
+        }
     }
+
+    /*
+    0
+    1 LINE
+    2
+    3 ERROR
+    4
+    5 BOARD
+    6
+     */
 
     @Override
     public ScreenType newGameInit() {
@@ -446,11 +536,11 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         try {
             currentGame = gameService.createGame(new GameDto(10, 10));
 
-            // TODO show grid
-            // ASK FOR SHIPS
             List<Integer> shipLengths = List.of(5, 4, 3, 3, 2);
-            for (int length : shipLengths) {
-                currentGame.addShip(promptShipPlacement(length));
+            for (int i = 0; i < shipLengths.size(); i++) {
+                displayGameBoard(5, 10, player.getId());
+                placeCursor(20, 0);
+                currentGame.addShip(promptShipPlacement(i + 1, shipLengths.get(i)));
             }
 
             return ScreenType.GAMEPLAY;

@@ -1,8 +1,12 @@
 package dev.ladera.battleship.model;
 
 import java.util.Objects;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Ship {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Ship.class);
+
     private Long id;
     private Integer rowStart;
     private Integer rowEnd;
@@ -27,7 +31,12 @@ public class Ship {
     }
 
     public boolean isValidLocation(int row, int col) {
-        return row >= rowStart && row <= rowEnd && col >= colStart && col <= colEnd;
+        int minRow = Math.min(rowStart, rowEnd);
+        int maxRow = Math.max(rowStart, rowEnd);
+        int minCol = Math.min(colStart, colEnd);
+        int maxCol = Math.max(colStart, colEnd);
+
+        return row >= minRow && row <= maxRow && col >= minCol && col <= maxCol;
     }
 
     public int area() {

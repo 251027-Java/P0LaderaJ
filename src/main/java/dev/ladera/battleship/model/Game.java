@@ -1,8 +1,12 @@
 package dev.ladera.battleship.model;
 
 import java.util.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Game {
+    private static final Logger LOGGER = LoggerFactory.getLogger(Game.class);
+
     private Long id;
     private Integer rows;
     private Integer cols;
@@ -86,6 +90,32 @@ public class Game {
     public void addShip(Ship ship) {
         ships.add(ship);
         processShip(ship);
+    }
+
+    public boolean isSpaceOccupied(Long playerId, int rowStart, int colStart, int rowEnd, int colEnd) {
+        return ships.stream()
+                .filter(e -> Objects.equals(e.getPlayerId(), playerId))
+                .anyMatch(e -> {
+                    int start = Math.min(rowStart, rowEnd);
+                    int end = Math.max(rowStart, rowEnd);
+
+                    for (int i = start; i <= end; i++) {
+                        if (e.isValidLocation(i, colStart) || e.isValidLocation(i, colEnd)) {
+                            return true;
+                        }
+                    }
+
+                    start = Math.min(colStart, colEnd);
+                    end = Math.max(colStart, colEnd);
+
+                    for (int i = start; i <= end; i++) {
+                        if (e.isValidLocation(rowStart, i) || e.isValidLocation(rowEnd, i)) {
+                            return true;
+                        }
+                    }
+
+                    return false;
+                });
     }
 
     public boolean isValidLocation(int row, int col) {
