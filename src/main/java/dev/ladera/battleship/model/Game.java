@@ -1,9 +1,8 @@
 package dev.ladera.battleship.model;
 
+import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 public class Game {
     private static final Logger LOGGER = LoggerFactory.getLogger(Game.class);
@@ -96,7 +95,7 @@ public class Game {
         moves.add(move);
         ships.forEach(e -> processMove(e, move));
         LOGGER.info("ship health {}", shipHealth);
-        LOGGER.info("ship remaining {}",shipsRemaining);
+        LOGGER.info("ship remaining {}", shipsRemaining);
     }
 
     public void addShip(Ship ship) {

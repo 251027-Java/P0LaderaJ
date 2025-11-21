@@ -13,6 +13,13 @@ import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.service.IGameService;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
@@ -23,14 +30,6 @@ import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 public class JlineBattleshipScreen implements IBattleshipScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(JlineBattleshipScreen.class);
@@ -665,8 +664,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             displayGameBoard(5, 10, player.getId(), true, "YOU");
 
-            int seconds = 3;
-            for (int i = seconds; i >= 0; i--) {
+            for (int i = 3; i >= 0; i--) {
                 placeCursor(3, 0);
 
                 var str = new AttributedString(
@@ -750,6 +748,12 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 AttributedStyle.DEFAULT.background(AttributedStyle.GREEN));
         str.print(terminal);
 
+        terminal.flush();
+    }
+
+    private void clearPlayerTurn() {
+        placeCursor(1, 40);
+        terminal.puts(InfoCmp.Capability.clr_eol);
         terminal.flush();
     }
 
@@ -863,13 +867,13 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
                 terminal.flush();
 
-                var dto = new MoveDto(
-                        currentGame.getExpectedTurn(), targetRow, targetCol, actingPlayer.getId(), currentGame.getId());
-
-                Move move = gameService.createMove(dto);
+                Move move = gameService.createMove(new MoveDto(
+                        currentGame.getExpectedTurn(),
+                        targetRow,
+                        targetCol,
+                        actingPlayer.getId(),
+                        currentGame.getId()));
                 currentGame.addMove(move);
-
-                actingPlayer = actingPlayer == player ? opponent : player;
             } catch (IOException | SQLException | InterruptedException e) {
                 LOGGER.info("gameplay", e);
             } catch (RuntimeException e) {
@@ -877,16 +881,33 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             }
 
             if (currentGame.hasWinner()) {
-                // TODO do some stuff before going back
+                clearPlayerTurn();
 
-                try {
-                    TimeUnit.SECONDS.sleep(3);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                placeCursor(20, 0);
+                var winner = new AttributedString(
+                        String.format(" %s has won! ", actingPlayer.getUsername()),
+                        AttributedStyle.DEFAULT.background(AttributedStyle.MAGENTA));
+                winner.print(terminal);
+
+                for (int i = 3; i >= 0; i--) {
+                    placeCursor(3, 0);
+
+                    var str = new AttributedString(
+                            String.format("Returning to main menu in %d second(s)", i),
+                            AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW));
+                    str.print(terminal);
+
+                    try {
+                        TimeUnit.SECONDS.sleep(1);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
 
                 return ScreenType.MAIN_MENU;
             }
+
+            actingPlayer = actingPlayer == player ? opponent : player;
         }
     }
 
