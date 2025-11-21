@@ -77,7 +77,7 @@ public class GameService implements IGameService {
             throw new UsernameExistsException("Username already exists");
         }
 
-        return playerRepository.save(new Player(dto.username(), dto.passphrase(), dto.originPlayerId()));
+        return playerRepository.save(new Player(dto.username(), dto.passphrase(), null));
     }
 
     @Override
