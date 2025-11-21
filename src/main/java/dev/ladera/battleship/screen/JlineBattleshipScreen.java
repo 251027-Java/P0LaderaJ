@@ -8,9 +8,17 @@ import dev.ladera.battleship.exception.InvalidPassphraseException;
 import dev.ladera.battleship.exception.InvalidUsernameException;
 import dev.ladera.battleship.exception.UsernameExistsException;
 import dev.ladera.battleship.model.Game;
+import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.service.IGameService;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
@@ -21,14 +29,6 @@ import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 public class JlineBattleshipScreen implements IBattleshipScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(JlineBattleshipScreen.class);
@@ -437,7 +437,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         return new int[] {row + (length - 1) * rowMul, col + (length - 1) * colMul};
     }
 
-    private void displayGameBoard(int row, int col, Long playerId) {
+    private void displayGameBoard(int row, int col, Long playerId, boolean self, String title) {
         var originalCursor = terminal.getCursorPosition(null);
         placeCursor(row, col);
 
@@ -452,19 +452,65 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         placeCursor(row + currentGame.getRows(), col + 1);
         terminal.writer().print("0123456789");
 
+        // name for board
         placeCursor(row + currentGame.getRows() + 2, col + 1);
-        var who = new AttributedString("YOU", AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW));
+        var who = new AttributedString(title, AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW));
         who.print(terminal);
-        // show your board
-        for (Ship e : currentGame.getShips()) {
-            if (Objects.equals(e.getPlayerId(), playerId)) {
-                for (int r = e.minRow(); r <= e.maxRow(); r++) {
-                    for (int c = e.minCol(); c <= e.maxCol(); c++) {
+
+        var shipExists = AttributedStyle.DEFAULT.background(AttributedStyle.GREEN);
+        var hit = AttributedStyle.DEFAULT.background(AttributedStyle.RED);
+        var miss = AttributedStyle.DEFAULT.background(AttributedStyle.BLUE);
+
+        List<Move> moves;
+        List<Ship> ships;
+
+        if (self) {
+            ships = currentGame.getShips().stream()
+                    .filter(e -> Objects.equals(e.getPlayerId(), playerId))
+                    .toList();
+
+            moves = currentGame.getMoves().stream()
+                    .filter(e -> !Objects.equals(e.getPlayerId(), playerId))
+                    .toList();
+
+            // show your ships
+            for (Ship ship : ships) {
+                for (int r = ship.minRow(); r <= ship.maxRow(); r++) {
+                    for (int c = ship.minCol(); c <= ship.maxCol(); c++) {
                         placeCursor(r + row, c + col + 1);
-                        var str = new AttributedString("*", AttributedStyle.DEFAULT.background(AttributedStyle.GREEN));
+                        var str = new AttributedString("*", shipExists);
                         str.print(terminal);
                     }
                 }
+            }
+        } else {
+            moves = currentGame.getMoves().stream()
+                    .filter(e -> Objects.equals(e.getPlayerId(), playerId))
+                    .toList();
+            ships = currentGame.getShips().stream()
+                    .filter(e -> !Objects.equals(e.getGameId(), playerId))
+                    .toList();
+        }
+
+        // draw misses and hits
+        for (Move move : moves) {
+            boolean isHit = false;
+            placeCursor(move.getRow() + row, move.getCol() + col + 1);
+
+            for (Ship ship : ships) {
+                if (ship.isValidLocation(move.getRow(), move.getCol())) {
+                    isHit = true;
+
+                    var str = new AttributedString("*", hit);
+                    str.print(terminal);
+
+                    break;
+                }
+            }
+
+            if (!isHit) {
+                var str = new AttributedString(".", miss);
+                str.print(terminal);
             }
         }
 
@@ -584,7 +630,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
     @Override
     public ScreenType newGameInit() {
-        clearScreen(false);
+        clearScreen(true);
         displaySignedInContent();
 
         try {
@@ -598,12 +644,12 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             List<Integer> shipLengths = List.of(5, 4, 3, 3, 2);
             for (int i = 0; i < shipLengths.size(); i++) {
-                displayGameBoard(5, 10, player.getId());
+                displayGameBoard(5, 10, player.getId(), true, "YOU");
                 placeCursor(20, 0);
                 currentGame.addShip(promptShipPlacement(i + 1, shipLengths.get(i)));
             }
 
-            displayGameBoard(5, 10, player.getId());
+            displayGameBoard(5, 10, player.getId(), true, "YOU");
 
             int seconds = 3;
             for (int i = seconds; i >= 0; i--) {
@@ -681,12 +727,28 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         return null;
     }
 
+    private void displayPlayerTurn(Player player) {
+        placeCursor(1, 40);
+        var str = new AttributedString(
+                String.format(" %s's turn ", player.getUsername()),
+                AttributedStyle.DEFAULT.background(AttributedStyle.GREEN));
+        str.print(terminal);
+    }
+
     @Override
     public ScreenType gamePlay() {
-        clearScreen(false);
+        clearScreen(true);
         displaySignedInContent();
 
-        displayGameBoard(5, 10, player.getId());
+        displayGameBoard(5, 10, player.getId(), true, "YOU");
+        displayGameBoard(5, 50, player.getId(), false, "OPPONENT");
+        boolean playerFirst = random.nextBoolean();
+
+        try {
+            TimeUnit.SECONDS.sleep(5);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
 
         return null;
     }
