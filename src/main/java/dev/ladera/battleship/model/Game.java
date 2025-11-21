@@ -41,6 +41,10 @@ public class Game {
                 .anyMatch(e -> Objects.equals(e.getPlayerId(), playerId) && e.getRow() == row && e.getCol() == col);
     }
 
+    public Set<Long> getPlayerIds() {
+        return shipsRemaining.keySet();
+    }
+
     private void processMove(Ship ship, Move move) {
         // ensure the shipowner and move initiator are from different players
         if (Objects.equals(ship.getPlayerId(), move.getPlayerId())) return;
@@ -94,8 +98,6 @@ public class Game {
     public void addMove(Move move) {
         moves.add(move);
         ships.forEach(e -> processMove(e, move));
-        LOGGER.info("ship health {}", shipHealth);
-        LOGGER.info("ship remaining {}", shipsRemaining);
     }
 
     public void addShip(Ship ship) {
@@ -135,6 +137,7 @@ public class Game {
 
     public boolean hasWinner() {
         return winnerId != null;
+        // return shipsRemaining.size()==1;
     }
 
     public Long getWinnerId() {

@@ -15,9 +15,7 @@ import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.service.IGameService;
 import java.io.IOException;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
@@ -73,9 +71,9 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
             case ScreenType.GAMEPLAY -> {
                 return gamePlay();
             }
-            // case ScreenType.GAME_SELECTION -> {
-            //     return gameSelection();
-            // }
+            case ScreenType.GAME_SELECTION -> {
+                return gameSelection();
+            }
             case ScreenType.NEW_GAME_INIT -> {
                 return newGameInit();
             }
@@ -736,6 +734,86 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
     @Override
     public ScreenType gameSelection() {
+        clearScreen(false);
+        displaySignedInContent();
+
+        var listBuilder = prompt.getPromptBuilder()
+                .createListPrompt()
+                .name("game")
+                .message("Games")
+                .newItem(StringConstants.BACK.value)
+                .add();
+
+        List<Game> unfinishedGames = new ArrayList<>();
+
+        try {
+            List<Game> foundGames = gameService.findGamesByPlayerId(player.getId());
+            for (Game e : foundGames) {
+                List<Move> moves = gameService.findMovesByGameId(e.getId());
+
+                if (moves.isEmpty()) {
+                    gameService.deleteGameById(e.getId());
+                } else {
+                    List<Ship> ships = gameService.findShipsByGameId(e.getId());
+                    e.setMoves(moves);
+                    e.setShips(ships);
+
+                    e.simulate();
+                    if (!e.hasWinner()) {
+                        unfinishedGames.add(e);
+                    }
+                }
+            }
+
+            LOGGER.debug("unf games {}", unfinishedGames.size());
+        } catch (SQLException e) {
+            LOGGER.debug("game selection", e);
+        }
+
+        HashMap<String, Game> games = new HashMap<>();
+
+        int maxGames = Math.min(unfinishedGames.size(), 10);
+        for (int i = 0; i < maxGames; i++) {
+            Game game = unfinishedGames.get(i);
+            String name = "Game#" + game.getId();
+            games.put(name, game);
+            listBuilder.newItem(name).add();
+        }
+
+        var builder = listBuilder.addPrompt();
+
+        try {
+            var res = prompt.prompt(builder.build());
+            String game = res.get("game").getResult();
+
+            switch (StringConstants.fromValue(game)) {
+                case StringConstants.BACK -> {
+                    return ScreenType.PLAY;
+                }
+                case null, default -> {}
+            }
+
+            // get other player
+            currentGame = games.get(game);
+            var playerIds = new HashSet<>(currentGame.getPlayerIds());
+            playerIds.remove(player.getId());
+
+            var other = playerIds.stream().findFirst();
+            if (other.isPresent()) {
+                opponent = gameService.findPlayerById(other.get());
+                currentGame.getShips().stream()
+                        .filter(e -> Objects.equals(e.getPlayerId(), other.get()))
+                        .forEach(e -> LOGGER.debug(
+                                "cpu ship {} {}",
+                                translateCoords(e.getRowStart(), e.getColStart()),
+                                translateCoords(e.getRowEnd(), e.getColEnd())));
+            }
+
+            return ScreenType.GAMEPLAY;
+        } catch (IOException | SQLException e) {
+            LOGGER.debug("game selection", e);
+        }
+
         return null;
     }
 
@@ -782,12 +860,23 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         }
     }
 
+    private Player determineActingPlayer() {
+        List<Move> moves = currentGame.getMoves();
+
+        if (moves.isEmpty()) {
+            return random.nextBoolean() ? player : opponent;
+        }
+
+        Move last = currentGame.getMoves().getLast();
+        return Objects.equals(last.getPlayerId(), player.getId()) ? opponent : player;
+    }
+
     @Override
     public ScreenType gamePlay() {
         clearScreen(true);
         displaySignedInContent();
 
-        actingPlayer = random.nextBoolean() ? player : opponent;
+        actingPlayer = determineActingPlayer();
 
         while (true) {
             try {
@@ -796,8 +885,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 displayGameBoard(5, 50, player.getId(), false, "OPPONENT");
                 placeCursor(20, 0);
 
-                int targetRow = 0;
-                int targetCol = 0;
+                int targetRow;
+                int targetCol;
 
                 if (actingPlayer == player) {
 
@@ -823,6 +912,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                             location = promptUserTurn();
                         }
                         case StringConstants.MAIN_MENU -> {
+                            opponent = null;
+                            currentGame = null;
                             return ScreenType.MAIN_MENU;
                         }
                         case null, default -> {}
@@ -904,6 +995,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                     }
                 }
 
+                opponent = null;
+                currentGame = null;
                 return ScreenType.MAIN_MENU;
             }
 

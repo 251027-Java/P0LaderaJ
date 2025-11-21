@@ -158,4 +158,14 @@ public class GameService implements IGameService {
     public Player findCpuByUsernameAndOrigin(String username, long originPlayerId) throws SQLException {
         return playerRepository.findCpuByUsernameAndOrigin(username, originPlayerId);
     }
+
+    @Override
+    public void deleteGameById(long id) throws SQLException {
+        gameRepository.deleteById(id);
+    }
+
+    @Override
+    public Player findPlayerById(long id) throws SQLException {
+        return playerRepository.findById(id);
+    }
 }
