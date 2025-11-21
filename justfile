@@ -20,11 +20,13 @@ build:
     {{ maven }} package
 
 # runs tests
+[group('test')]
 test:
     {{ maven }} test
     {{ maven }} jacoco:report
 
 # view coverage
+[group('test')]
 view-coverage:
     start "target/site/jacoco/index.html"
 
@@ -40,9 +42,13 @@ format:
     {{ maven }} spotless:apply
     docker run --rm -v /$(pwd):/work backplane/pgformatter -i scripts/*.sql
 
-# cleans and runs mvnw verify
-all: clean
+# verify project integrity
+verify:
     {{ maven }} verify
+
+# cleans and verifies project integrity
+[default]
+default: clean verify
 
 _db-create:
     docker run --name {{ db_container }} -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres

@@ -106,7 +106,7 @@ public class GameServiceTest {
     @Test
     void createPlayerWithBadPassphrase() {
         assertThrows(InvalidPassphraseException.class, () -> {
-            service.createPlayer(new PlayerDto("user3248", "a", null));
+            service.createPlayer(new PlayerDto("user3248", "a".repeat(100), null));
         });
     }
 
