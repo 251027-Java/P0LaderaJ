@@ -24,6 +24,10 @@ test:
     {{ maven }} test
     {{ maven }} jacoco:report
 
+# view coverage
+view-coverage:
+    start "target/site/jacoco/index.html"
+
 # style check
 [group('style')]
 check:
