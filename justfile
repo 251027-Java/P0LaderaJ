@@ -20,8 +20,15 @@ build:
     {{ maven }} package
 
 # runs tests
+[group('test')]
 test:
     {{ maven }} test
+    {{ maven }} jacoco:report
+
+# view coverage
+[group('test')]
+view-coverage:
+    start "target/site/jacoco/index.html"
 
 # style check
 [group('style')]
@@ -35,9 +42,13 @@ format:
     {{ maven }} spotless:apply
     docker run --rm -v /$(pwd):/work backplane/pgformatter -i scripts/*.sql
 
-# cleans and runs mvnw verify
-all: clean
+# verify project integrity
+verify:
     {{ maven }} verify
+
+# cleans and verifies project integrity
+[default]
+default: clean verify
 
 _db-create:
     docker run --name {{ db_container }} -e POSTGRES_PASSWORD=secret -p 5432:5432 -d postgres
@@ -47,7 +58,7 @@ _db-init filepath:
     @sleep 2
     docker exec {{ db_container }} psql -U postgres -v ON_ERROR_STOP=1 -q -f tmp/dbdata
 
-# create the container and set up the database 
+# create the container and set up the database
 [group('db')]
 db-create: _db-create (_db-init 'scripts/init-db.sql')
 
@@ -74,4 +85,3 @@ db-export filepath='battle.data':
 # create container with a given data file
 [group('db')]
 db-create-with filepath: _db-create (_db-init filepath)
-

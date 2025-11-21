@@ -48,6 +48,10 @@ public class GameService implements IGameService {
 
     @Override
     public Player createCpuPlayer(PlayerDto dto) throws SQLException {
+        if (dto.originPlayerId() == null) {
+            throw new MissingOriginPlayerIdException("CPU players must have an originating player");
+        }
+
         if (!isValidUsername(dto.username())) {
             throw new InvalidUsernameException("Username must only contain 3-30 alphanumeric characters");
         }
@@ -73,7 +77,7 @@ public class GameService implements IGameService {
             throw new UsernameExistsException("Username already exists");
         }
 
-        return playerRepository.save(new Player(dto.username(), dto.passphrase(), dto.originPlayerId()));
+        return playerRepository.save(new Player(dto.username(), dto.passphrase(), null));
     }
 
     @Override
