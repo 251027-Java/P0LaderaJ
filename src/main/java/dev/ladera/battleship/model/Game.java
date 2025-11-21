@@ -98,8 +98,6 @@ public class Game {
     public void addMove(Move move) {
         moves.add(move);
         ships.forEach(e -> processMove(e, move));
-        LOGGER.info("ship health {}", shipHealth);
-        LOGGER.info("ship remaining {}", shipsRemaining);
     }
 
     public void addShip(Ship ship) {
@@ -139,6 +137,7 @@ public class Game {
 
     public boolean hasWinner() {
         return winnerId != null;
+        // return shipsRemaining.size()==1;
     }
 
     public Long getWinnerId() {

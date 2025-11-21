@@ -13,6 +13,11 @@ import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.service.IGameService;
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
@@ -23,12 +28,6 @@ import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 
 public class JlineBattleshipScreen implements IBattleshipScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(JlineBattleshipScreen.class);
@@ -766,7 +765,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 }
             }
 
-            LOGGER.debug("unf games {} | {}", unfinishedGames.size(), unfinishedGames);
+            LOGGER.debug("unf games {}", unfinishedGames.size());
         } catch (SQLException e) {
             LOGGER.debug("game selection", e);
         }
@@ -794,14 +793,20 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 case null, default -> {}
             }
 
-            // load game details
+            // get other player
             currentGame = games.get(game);
-            var playerIds = currentGame.getPlayerIds();
+            var playerIds = new HashSet<>(currentGame.getPlayerIds());
             playerIds.remove(player.getId());
 
             var other = playerIds.stream().findFirst();
             if (other.isPresent()) {
                 opponent = gameService.findPlayerById(other.get());
+                currentGame.getShips().stream()
+                        .filter(e -> Objects.equals(e.getPlayerId(), other.get()))
+                        .forEach(e -> LOGGER.debug(
+                                "cpu ship {} {}",
+                                translateCoords(e.getRowStart(), e.getColStart()),
+                                translateCoords(e.getRowEnd(), e.getColEnd())));
             }
 
             return ScreenType.GAMEPLAY;
