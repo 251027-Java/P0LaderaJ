@@ -31,4 +31,8 @@ public interface IGameService {
     Player findPlayerByUsername(String username) throws SQLException;
 
     Player findCpuByUsernameAndOrigin(String username, long originPlayerId) throws SQLException;
+
+    void deleteGameById(long id) throws SQLException;
+
+    Player findPlayerById(long id) throws SQLException;
 }

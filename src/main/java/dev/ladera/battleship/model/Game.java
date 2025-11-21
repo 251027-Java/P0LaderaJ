@@ -41,6 +41,10 @@ public class Game {
                 .anyMatch(e -> Objects.equals(e.getPlayerId(), playerId) && e.getRow() == row && e.getCol() == col);
     }
 
+    public Set<Long> getPlayerIds() {
+        return shipsRemaining.keySet();
+    }
+
     private void processMove(Ship ship, Move move) {
         // ensure the shipowner and move initiator are from different players
         if (Objects.equals(ship.getPlayerId(), move.getPlayerId())) return;
