@@ -165,7 +165,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         while (true) {
             try {
-                placeCursor(1, 0);
+                placeCursor(3, 0);
                 var res = prompt.prompt(builder.build());
                 resetPrompt();
 
@@ -183,8 +183,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 LOGGER.error("sign in", e);
                 return null;
             } catch (RuntimeException e) {
-                clearLines(0, 2);
-                displayError(0, 0, e.getMessage());
+                clearLines(1, 4);
+                displayError(1, 0, e.getMessage());
             }
         }
     }
@@ -274,12 +274,12 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             if (!done) {
                 resetPrompt();
-                displayError(0, 0, "Username already exists");
+                displayError(1, 0, "Username already exists");
                 placeCursor(cursor);
             }
         }
 
-        clearLine(0);
+        clearLine(1);
         placeNextPromptAt(cursor.getY() + 1, cursor.getX());
 
         return username;
@@ -310,12 +310,12 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
             if (!p1.equals(p2)) {
                 resetPrompt();
-                displayError(0, 0, "Passphrases did not match");
+                displayError(1, 0, "Passphrases did not match");
                 placeCursor(cursor);
                 continue;
             }
 
-            clearLine(0);
+            clearLine(1);
             placeNextPromptAt(cursor.getY() + 2, cursor.getX());
 
             return p1;
@@ -328,7 +328,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
         while (true) {
             try {
-                placeCursor(1, 0);
+                placeCursor(3, 0);
                 String username = promptUsernameCreation();
                 String passphrase = promptPassphraseCreation();
 
@@ -339,8 +339,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 LOGGER.error("create account", e);
                 return null;
             } catch (InvalidUsernameException | UsernameExistsException | InvalidPassphraseException e) {
-                clearLines(0, 2);
-                displayError(0, 0, e.getMessage());
+                clearLines(1, 5);
+                displayError(1, 0, e.getMessage());
             }
         }
     }
@@ -532,13 +532,15 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     }
 
     /*
+    general format for game
     0
-    1 LINE
+    1 signed in line
     2
-    3 ERROR
+    3 error
     4
-    5 BOARD
-    6
+    5 board
+    .
+    20 input
      */
 
     @Override
