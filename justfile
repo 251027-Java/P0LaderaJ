@@ -22,6 +22,7 @@ build:
 # runs tests
 test:
     {{ maven }} test
+    {{ maven }} jacoco:report
 
 # style check
 [group('style')]
@@ -47,7 +48,7 @@ _db-init filepath:
     @sleep 2
     docker exec {{ db_container }} psql -U postgres -v ON_ERROR_STOP=1 -q -f tmp/dbdata
 
-# create the container and set up the database 
+# create the container and set up the database
 [group('db')]
 db-create: _db-create (_db-init 'scripts/init-db.sql')
 
@@ -74,4 +75,3 @@ db-export filepath='battle.data':
 # create container with a given data file
 [group('db')]
 db-create-with filepath: _db-create (_db-init filepath)
-
