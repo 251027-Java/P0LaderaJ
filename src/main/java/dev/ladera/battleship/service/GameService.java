@@ -110,7 +110,7 @@ public class GameService implements IGameService {
             return true;
         }
 
-        return Objects.equals(latestMove.getPlayerId(), playerId);
+        return !Objects.equals(latestMove.getPlayerId(), playerId);
     }
 
     @Override

@@ -1,8 +1,9 @@
 package dev.ladera.battleship.model;
 
-import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.*;
 
 public class Game {
     private static final Logger LOGGER = LoggerFactory.getLogger(Game.class);
@@ -30,6 +31,15 @@ public class Game {
         ships = new ArrayList<>();
         shipHealth = new HashMap<>();
         shipsRemaining = new HashMap<>();
+    }
+
+    public int getExpectedTurn() {
+        return moves.size() + 1;
+    }
+
+    public boolean hasMoveAt(Long playerId, int row, int col) {
+        return moves.stream()
+                .anyMatch(e -> Objects.equals(e.getPlayerId(), playerId) && e.getRow() == row && e.getCol() == col);
     }
 
     private void processMove(Ship ship, Move move) {
@@ -85,6 +95,8 @@ public class Game {
     public void addMove(Move move) {
         moves.add(move);
         ships.forEach(e -> processMove(e, move));
+        LOGGER.info("ship health {}", shipHealth);
+        LOGGER.info("ship remaining {}",shipsRemaining);
     }
 
     public void addShip(Ship ship) {

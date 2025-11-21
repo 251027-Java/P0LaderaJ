@@ -2,6 +2,7 @@ package dev.ladera.battleship.screen;
 
 import dev.ladera.battleship.config.StringConstants;
 import dev.ladera.battleship.dto.GameDto;
+import dev.ladera.battleship.dto.MoveDto;
 import dev.ladera.battleship.dto.PlayerDto;
 import dev.ladera.battleship.dto.ShipDto;
 import dev.ladera.battleship.exception.InvalidPassphraseException;
@@ -12,13 +13,6 @@ import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.service.IGameService;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
@@ -30,6 +24,14 @@ import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+
 public class JlineBattleshipScreen implements IBattleshipScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(JlineBattleshipScreen.class);
 
@@ -40,7 +42,8 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
     private Random random;
 
     private Player player;
-    private Player cpuPlayer;
+    private Player opponent;
+    private Player actingPlayer;
     private Game currentGame;
 
     public JlineBattleshipScreen(IGameService gameService) throws IOException {
@@ -415,6 +418,12 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         return new int[] {9 - r, c};
     }
 
+    private String translateCoords(int row, int col) {
+        char r = (char) (9 - row + 'A');
+        char c = (char) (col + '0');
+        return "" + r + c;
+    }
+
     private boolean isValidLocation(String location) {
         return location.matches("^(?i)[a-j][0-9]$");
     }
@@ -613,15 +622,20 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                 int[] end = applyDirection(r, c, length, d);
 
                 if (!currentGame.isValidLocation(end[0], end[1])
-                        || currentGame.isSpaceOccupied(cpuPlayer.getId(), r, c, end[0], end[1])) {
+                        || currentGame.isSpaceOccupied(opponent.getId(), r, c, end[0], end[1])) {
                     continue;
                 }
 
                 Ship ship = gameService.createShip(
-                        new ShipDto(r, end[0], c, end[1], cpuPlayer.getId(), currentGame.getId()));
+                        new ShipDto(r, end[0], c, end[1], opponent.getId(), currentGame.getId()));
                 currentGame.addShip(ship);
 
-                LOGGER.debug("cpu ship ({}) {}", length, ship);
+                LOGGER.debug(
+                        "cpu ship ({}) {} {} | {}",
+                        length,
+                        translateCoords(r, c),
+                        translateCoords(end[0], end[1]),
+                        ship);
 
                 done = true;
             }
@@ -636,9 +650,9 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         try {
             currentGame = gameService.createGame(new GameDto(10, 10));
 
-            cpuPlayer = gameService.findCpuByUsernameAndOrigin("CPU", player.getId());
-            if (cpuPlayer == null) {
-                cpuPlayer = gameService.createCpuPlayer(new PlayerDto("CPU", null, player.getId()));
+            opponent = gameService.findCpuByUsernameAndOrigin("CPU", player.getId());
+            if (opponent == null) {
+                opponent = gameService.createCpuPlayer(new PlayerDto("CPU", null, player.getId()));
             }
             createCpuBoard();
 
@@ -729,10 +743,39 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
 
     private void displayPlayerTurn(Player player) {
         placeCursor(1, 40);
+        terminal.puts(InfoCmp.Capability.clr_eol);
+
         var str = new AttributedString(
                 String.format(" %s's turn ", player.getUsername()),
                 AttributedStyle.DEFAULT.background(AttributedStyle.GREEN));
         str.print(terminal);
+
+        terminal.flush();
+    }
+
+    private String promptUserTurn() throws IOException {
+        var builder = prompt.getPromptBuilder()
+                .createInputPrompt()
+                .name("location")
+                .message("Select a location to fire at")
+                .defaultValue("")
+                .addPrompt();
+
+        var res = prompt.prompt(builder.build());
+        resetPrompt();
+
+        return res.get("location").getResult();
+    }
+
+    private int[] generateCpuMoveCoords() {
+        while (true) {
+            int r = random.nextInt(currentGame.getRows());
+            int c = random.nextInt(currentGame.getCols());
+
+            if (!currentGame.hasMoveAt(opponent.getId(), r, c)) {
+                return new int[] {r, c};
+            }
+        }
     }
 
     @Override
@@ -740,17 +783,111 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
         clearScreen(true);
         displaySignedInContent();
 
-        displayGameBoard(5, 10, player.getId(), true, "YOU");
-        displayGameBoard(5, 50, player.getId(), false, "OPPONENT");
-        boolean playerFirst = random.nextBoolean();
+        actingPlayer = random.nextBoolean() ? player : opponent;
 
-        try {
-            TimeUnit.SECONDS.sleep(5);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
+        while (true) {
+            try {
+                displayPlayerTurn(actingPlayer);
+                displayGameBoard(5, 10, player.getId(), true, "YOU");
+                displayGameBoard(5, 50, player.getId(), false, "OPPONENT");
+                placeCursor(20, 0);
+
+                int targetRow = 0;
+                int targetCol = 0;
+
+                if (actingPlayer == player) {
+
+                    var builder = prompt.getPromptBuilder()
+                            .createListPrompt()
+                            .name("action")
+                            .message("Action")
+                            .newItem(StringConstants.MAKE_MOVE.value)
+                            .add()
+                            .newItem(StringConstants.MAIN_MENU.value)
+                            .add()
+                            .addPrompt();
+
+                    var res = prompt.prompt(builder.build());
+                    resetPrompt();
+
+                    String action = res.get("action").getResult();
+                    String location = "";
+
+                    switch (StringConstants.fromValue(action)) {
+                        case StringConstants.MAKE_MOVE -> {
+                            placeCursor(20, 0);
+                            location = promptUserTurn();
+                        }
+                        case StringConstants.MAIN_MENU -> {
+                            return ScreenType.MAIN_MENU;
+                        }
+                        case null, default -> {}
+                    }
+
+                    if (!isValidLocation(location)) {
+                        displayError(3, 0, "Invalid location provided");
+                        continue;
+                    }
+
+                    int[] coords = translateLocation(location);
+
+                    if (!currentGame.isValidLocation(coords[0], coords[1])) {
+                        displayError(3, 0, "Invalid location: out of bounds");
+                        continue;
+                    }
+
+                    if (currentGame.hasMoveAt(actingPlayer.getId(), coords[0], coords[1])) {
+                        displayError(3, 0, "Already played that move");
+                        continue;
+                    }
+
+                    targetRow = coords[0];
+                    targetCol = coords[1];
+
+                    clearLine(3);
+                } else {
+                    TimeUnit.SECONDS.sleep(2);
+                    int[] coords = generateCpuMoveCoords();
+                    targetRow = coords[0];
+                    targetCol = coords[1];
+                }
+
+                placeCursor(19, 0);
+                terminal.puts(InfoCmp.Capability.clr_eol);
+
+                var str = new AttributedString(
+                        String.format(
+                                "%s played %s", actingPlayer.getUsername(), translateCoords(targetRow, targetCol)),
+                        AttributedStyle.DEFAULT.foreground(AttributedStyle.YELLOW));
+                str.print(terminal);
+
+                terminal.flush();
+
+                var dto = new MoveDto(
+                        currentGame.getExpectedTurn(), targetRow, targetCol, actingPlayer.getId(), currentGame.getId());
+
+                Move move = gameService.createMove(dto);
+                currentGame.addMove(move);
+
+                actingPlayer = actingPlayer == player ? opponent : player;
+            } catch (IOException | SQLException | InterruptedException e) {
+                LOGGER.info("gameplay", e);
+            } catch (RuntimeException e) {
+                LOGGER.info("gameplay run", e);
+            }
+
+            if (currentGame.hasWinner()) {
+                // TODO do some stuff before going back
+
+                try {
+                    TimeUnit.SECONDS.sleep(3);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+
+                return ScreenType.MAIN_MENU;
+            }
         }
-
-        return null;
     }
 
     @Override

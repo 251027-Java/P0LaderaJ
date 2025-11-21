@@ -16,6 +16,8 @@ public enum StringConstants {
     BACK("Back"),
     NEW_GAME("New game"),
     CONTINUE_GAME("Continue game"),
+    MAIN_MENU("Main menu"),
+    MAKE_MOVE("Make a move"),
     BATTLESHIP(
             """
 
