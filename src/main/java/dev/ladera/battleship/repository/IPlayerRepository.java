@@ -6,7 +6,9 @@ import java.sql.SQLException;
 public interface IPlayerRepository {
     Player findById(long id) throws SQLException;
 
-    Player findByUsername(String username) throws SQLException;
+    Player findRealByUsername(String username) throws SQLException;
+
+    Player findCpuByUsernameAndOrigin(String username, long originPlayerId) throws SQLException;
 
     Player save(Player player) throws SQLException;
 

@@ -51,7 +51,7 @@ public class Ship {
     }
 
     public int area() {
-        return (rowEnd - rowStart + 1) * (colEnd - colStart + 1);
+        return (maxRow() - minRow() + 1) * (maxCol() - minCol() + 1);
     }
 
     public Long getId() {

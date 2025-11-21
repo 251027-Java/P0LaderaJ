@@ -12,6 +12,8 @@ import java.sql.SQLException;
 import java.util.List;
 
 public interface IGameService {
+    Player createCpuPlayer(PlayerDto dto) throws SQLException;
+
     Player createPlayer(PlayerDto dto) throws SQLException;
 
     Game createGame(GameDto dto) throws SQLException;
@@ -27,4 +29,6 @@ public interface IGameService {
     List<Move> findMovesByGameId(long id) throws SQLException;
 
     Player findPlayerByUsername(String username) throws SQLException;
+
+    Player findCpuByUsernameAndOrigin(String username, long originPlayerId) throws SQLException;
 }

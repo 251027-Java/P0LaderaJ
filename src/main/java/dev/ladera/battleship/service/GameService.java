@@ -47,6 +47,19 @@ public class GameService implements IGameService {
     }
 
     @Override
+    public Player createCpuPlayer(PlayerDto dto) throws SQLException {
+        if (!isValidUsername(dto.username())) {
+            throw new InvalidUsernameException("Username must only contain 3-30 alphanumeric characters");
+        }
+
+        if (playerRepository.findCpuByUsernameAndOrigin(dto.username(), dto.originPlayerId()) != null) {
+            throw new UsernameExistsException("Username already exists");
+        }
+
+        return playerRepository.save(new Player(dto.username(), dto.passphrase(), dto.originPlayerId()));
+    }
+
+    @Override
     public Player createPlayer(PlayerDto dto) throws SQLException {
         if (!isValidUsername(dto.username())) {
             throw new InvalidUsernameException("Username must only contain 3-30 alphanumeric characters");
@@ -56,7 +69,7 @@ public class GameService implements IGameService {
             throw new InvalidPassphraseException("Passphrase must be between 5 and 50 characters");
         }
 
-        if (playerRepository.findByUsername(dto.username()) != null) {
+        if (playerRepository.findRealByUsername(dto.username()) != null) {
             throw new UsernameExistsException("Username already exists");
         }
 
@@ -97,7 +110,7 @@ public class GameService implements IGameService {
             return true;
         }
 
-        return Objects.equals(latestMove.getPlayerId(), playerId);
+        return !Objects.equals(latestMove.getPlayerId(), playerId);
     }
 
     @Override
@@ -138,6 +151,11 @@ public class GameService implements IGameService {
 
     @Override
     public Player findPlayerByUsername(String username) throws SQLException {
-        return playerRepository.findByUsername(username);
+        return playerRepository.findRealByUsername(username);
+    }
+
+    @Override
+    public Player findCpuByUsernameAndOrigin(String username, long originPlayerId) throws SQLException {
+        return playerRepository.findCpuByUsernameAndOrigin(username, originPlayerId);
     }
 }

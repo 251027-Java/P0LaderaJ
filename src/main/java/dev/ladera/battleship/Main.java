@@ -52,11 +52,11 @@ public class Main {
         System.out.println(p1.getId() + " | " + p2.getId());
 
         System.out.println(repository.findById(p1.getId()));
-        System.out.println(repository.findByUsername("COolDUDE"));
+        System.out.println(repository.findRealByUsername("COolDUDE"));
 
         repository.deleteById(p2.getId());
 
-        System.out.println(repository.findByUsername("COolDUDE"));
+        System.out.println(repository.findRealByUsername("COolDUDE"));
     }
 
     static void gameRepoTest(IGameRepository repository) throws SQLException {
