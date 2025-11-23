@@ -13,11 +13,12 @@ import dev.ladera.battleship.repository.IGameRepository;
 import dev.ladera.battleship.repository.IMoveRepository;
 import dev.ladera.battleship.repository.IPlayerRepository;
 import dev.ladera.battleship.repository.IShipRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GameService implements IGameService {
     private static final Logger LOGGER = LoggerFactory.getLogger(GameService.class);

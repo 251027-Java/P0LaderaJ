@@ -10,12 +10,13 @@ import dev.ladera.battleship.screen.IBattleshipScreen;
 import dev.ladera.battleship.screen.JlineBattleshipScreen;
 import dev.ladera.battleship.service.GameService;
 import dev.ladera.battleship.service.IGameService;
-import java.io.IOException;
-import java.sql.SQLException;
 import org.jline.utils.AttributedStringBuilder;
 import org.jline.utils.AttributedStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.sql.SQLException;
 
 public class Main {
     private static final Logger LOGGER = LoggerFactory.getLogger(Main.class);

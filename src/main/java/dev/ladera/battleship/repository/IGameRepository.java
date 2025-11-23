@@ -1,6 +1,7 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Game;
+
 import java.sql.SQLException;
 import java.util.List;
 

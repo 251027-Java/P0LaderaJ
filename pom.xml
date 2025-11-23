@@ -98,6 +98,9 @@
                 <configuration>
                     <java>
                         <palantirJavaFormat/>
+                        <importOrder>
+                            <order>,java|javax</order>
+                        </importOrder>
                     </java>
                 </configuration>
                 <executions>

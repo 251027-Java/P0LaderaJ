@@ -1,6 +1,7 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Player;
+
 import java.sql.SQLException;
 
 public interface IPlayerRepository {
