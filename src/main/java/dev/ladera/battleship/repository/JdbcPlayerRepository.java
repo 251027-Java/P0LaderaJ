@@ -1,9 +1,10 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Player;
-import java.sql.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.sql.*;
 
 public class JdbcPlayerRepository implements IPlayerRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcPlayerRepository.class);

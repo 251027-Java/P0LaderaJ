@@ -1,8 +1,9 @@
 package dev.ladera.battleship.model;
 
-import java.util.Objects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Objects;
 
 public class Ship {
     private static final Logger LOGGER = LoggerFactory.getLogger(Ship.class);

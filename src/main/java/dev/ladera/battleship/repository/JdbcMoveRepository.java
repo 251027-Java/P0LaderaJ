@@ -1,11 +1,12 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Move;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcMoveRepository implements IMoveRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcMoveRepository.class);

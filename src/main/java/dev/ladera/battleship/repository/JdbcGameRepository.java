@@ -1,14 +1,15 @@
 package dev.ladera.battleship.repository;
 
 import dev.ladera.battleship.model.Game;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class JdbcGameRepository implements IGameRepository {
     private static final Logger LOGGER = LoggerFactory.getLogger(JdbcGameRepository.class);

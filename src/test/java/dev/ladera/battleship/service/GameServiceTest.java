@@ -17,12 +17,13 @@ import dev.ladera.battleship.repository.IGameRepository;
 import dev.ladera.battleship.repository.IMoveRepository;
 import dev.ladera.battleship.repository.IPlayerRepository;
 import dev.ladera.battleship.repository.IShipRepository;
-import java.sql.SQLException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.sql.SQLException;
 
 @ExtendWith(MockitoExtension.class)
 public class GameServiceTest {
