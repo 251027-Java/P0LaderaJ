@@ -13,11 +13,6 @@ import dev.ladera.battleship.model.Move;
 import dev.ladera.battleship.model.Player;
 import dev.ladera.battleship.model.Ship;
 import dev.ladera.battleship.service.IGameService;
-import java.io.IOException;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Function;
 import org.jline.consoleui.prompt.ConsolePrompt;
 import org.jline.terminal.Cursor;
 import org.jline.terminal.Terminal;
@@ -28,6 +23,12 @@ import org.jline.utils.AttributedStyle;
 import org.jline.utils.InfoCmp;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 public class JlineBattleshipScreen implements IBattleshipScreen {
     private static final Logger LOGGER = LoggerFactory.getLogger(JlineBattleshipScreen.class);
@@ -494,7 +495,7 @@ public class JlineBattleshipScreen implements IBattleshipScreen {
                     .filter(e -> Objects.equals(e.getPlayerId(), playerId))
                     .toList();
             ships = currentGame.getShips().stream()
-                    .filter(e -> !Objects.equals(e.getGameId(), playerId))
+                    .filter(e -> !Objects.equals(e.getPlayerId(), playerId))
                     .toList();
         }
 

@@ -1,6 +1,7 @@
 maven := './mvnw'
 jar_loc := 'target/battleship-1.0-0-dist.jar'
 db_container := 'battleship-db'
+debug_args := '-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=*:5005'
 
 # removes artifacts and temporary files
 clean:
@@ -9,7 +10,11 @@ clean:
 
 # compiles and runs the Main file
 run:
-    {{ maven }} compile exec:java
+    {{ maven }} compile exec:java 
+
+# run jar in debug mode
+debug:
+    java  {{ debug_args }} -jar {{ jar_loc }}
 
 # runs the jar (if built)
 runj:
